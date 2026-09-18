@@ -1,7 +1,14 @@
-import type { NextConfig } from "next";
+import withPWAInit from "@ducanh2912/next-pwa";
 
-const nextConfig: NextConfig = {
-  /* config options here */
+const withPWA = withPWAInit({
+  dest: "public",
+  disable: process.env.NODE_ENV === "development", // PWA hanya aktif saat production (build) agar tidak mengganggu proses dev
+  register: true,
+});
+
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  // konfigurasi next.js lainnya bisa ditaruh di sini
 };
 
-export default nextConfig;
+export default withPWA(nextConfig);
