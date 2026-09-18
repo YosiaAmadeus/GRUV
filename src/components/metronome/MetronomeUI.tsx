@@ -15,9 +15,22 @@ export default function MetronomeUI() {
   // Inisialisasi Engine
   useEffect(() => {
     engineRef.current = new MetronomeEngine();
+    
+    // --- TAMBAHKAN KODE INI ---
+    const handleFirstTouch = () => {
+      if (engineRef.current) {
+        engineRef.current.unlock(); // Panaskan mesin saat layar disentuh!
+      }
+      // Hapus listener agar tidak memberatkan browser
+      document.removeEventListener('pointerdown', handleFirstTouch);
+    };
+    document.addEventListener('pointerdown', handleFirstTouch);
+    // -------------------------
+
     return () => {
       engineRef.current?.stop();
-      releaseWakeLock(); // Lepas kunci layar saat keluar aplikasi
+      releaseWakeLock();
+      document.removeEventListener('pointerdown', handleFirstTouch); // Jangan lupa di-cleanup
     };
   }, []);
 
