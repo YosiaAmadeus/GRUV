@@ -76,21 +76,20 @@ export class MetronomeEngine {
     if (this.isPlaying) return;
     this.isPlaying = true;
 
+    // Mesin sudah dipastikan unlock dari layar "Let's Start"
     if (!this.audioContext) {
       this.unlock();
+    } 
+    
+    // Gunakan tanda '!' atau pengecekan if untuk menenangkan TypeScript
+    if (this.audioContext && this.audioContext.state === 'suspended') {
+      this.audioContext.resume();
     }
 
     this.currentBeat = 0;
-
-    // SMART DELAY
-    if (this.audioContext!.state === 'suspended') {
-      this.audioContext!.resume();
-      // Beri waktu 100ms agar hardware speaker HP benar-benar menyala (Hanya untuk Play pertama)
-      this.nextNoteTime = this.audioContext!.currentTime + 0.1; 
-    } else {
-      // Play selanjutnya atau saat mesin sudah dipanaskan = 0 DELAY INSTAN!
-      this.nextNoteTime = this.audioContext!.currentTime; 
-    }
+    
+    // Tambahkan tanda '!' sebelum .currentTime
+    this.nextNoteTime = this.audioContext!.currentTime; 
 
     this.scheduler();
   }
