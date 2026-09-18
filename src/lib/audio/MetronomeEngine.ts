@@ -2,6 +2,7 @@ export class MetronomeEngine {
   private audioContext: AudioContext | null = null;
   private isPlaying: boolean = false;
   private bpm: number = 120;
+  private unlocked: boolean = false; // Flag khusus untuk trik unlock mobile
   
   private lookahead: number = 25; 
   private scheduleAheadTime: number = 0.1; 
@@ -10,8 +11,26 @@ export class MetronomeEngine {
   private currentBeat: number = 0;
   private timerID: NodeJS.Timeout | null = null;
 
-  // Menyimpan daftar suara yang sedang antre agar bisa dibatalkan saat Sync
   private activeOscillators: OscillatorNode[] = [];
+
+  // FUNGSI BARU: Membuka gembok audio dengan suara bisu 
+  private unlockAudioContext() {
+    if (!this.audioContext) {
+      this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    
+    // Trik khusus: Mainkan suara bisu 1 milidetik agar sistem HP merestui keluarnya suara
+    if (!this.unlocked) {
+      const osc = this.audioContext.createOscillator();
+      const gain = this.audioContext.createGain();
+      gain.gain.value = 0; // Volume 0 (bisu)
+      osc.connect(gain);
+      gain.connect(this.audioContext.destination);
+      osc.start(this.audioContext.currentTime);
+      osc.stop(this.audioContext.currentTime + 0.001);
+      this.unlocked = true;
+    }
+  }
 
   private nextNote() {
     const secondsPerBeat = 60.0 / this.bpm;
@@ -41,10 +60,8 @@ export class MetronomeEngine {
     osc.start(time);
     osc.stop(time + 0.03);
 
-    // Masukkan ke daftar antrean
     this.activeOscillators.push(osc);
 
-    // Hapus dari daftar jika sudah selesai berbunyi
     osc.onended = () => {
       const index = this.activeOscillators.indexOf(osc);
       if (index > -1) {
@@ -54,7 +71,8 @@ export class MetronomeEngine {
   }
 
   private scheduler() {
-    if (!this.audioContext) return;
+    // PENCEGAH ZOMBIE LOOP: Jika sudah di-stop, hentikan putaran ini!
+    if (!this.audioContext || !this.isPlaying) return;
 
     while (this.nextNoteTime < this.audioContext.currentTime + this.scheduleAheadTime) {
       this.playClick(this.nextNoteTime);
@@ -64,64 +82,64 @@ export class MetronomeEngine {
     this.timerID = setTimeout(() => this.scheduler(), this.lookahead);
   }
 
-public start() {
+  public start() {
     if (this.isPlaying) return;
 
-    if (!this.audioContext) {
-      this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    // 1. Eksekusi unlock secara sinkron (langsung merespons jari)
+    this.unlockAudioContext();
+
+    // 2. Bangunkan mesin jika masih tertidur
+    if (this.audioContext!.state === 'suspended') {
+      this.audioContext!.resume();
     }
 
-    // Ubah status ke true agar UI langsung merespons tombol berhenti
     this.isPlaying = true;
     this.currentBeat = 0;
-
-    if (this.audioContext.state === 'suspended') {
-      // Tunggu sampai mesin audio benar-benar terbangun oleh HP, baru mulai scheduler
-      this.audioContext.resume().then(() => {
-        if (!this.isPlaying) return; // Jaga-jaga kalau user keburu menekan stop
-        this.nextNoteTime = this.audioContext!.currentTime;
-        this.scheduler();
-      });
-    } else {
-      // Jika sudah running, langsung tembakkan
-      this.nextNoteTime = this.audioContext.currentTime;
-      this.scheduler();
-    }
+    
+    // 3. Kasih jeda super kecil (10 milidetik) agar hardware HP bersiap
+    this.nextNoteTime = this.audioContext!.currentTime + 0.01; 
+    
+    this.scheduler();
   }
 
   public stop() {
-    this.isPlaying = false;
+    this.isPlaying = false; // Mematikan status agar scheduler berhenti
+    
     if (this.timerID) {
       clearTimeout(this.timerID);
       this.timerID = null;
     }
-  }
 
-  // FITUR BARU: Reset to 1 seketika
-  public sync() {
-    if (!this.isPlaying || !this.audioContext) return;
-
-    // 1. Hentikan loop yang sedang berjalan
-    if (this.timerID) {
-      clearTimeout(this.timerID);
-    }
-
-    // 2. Bunuh secara paksa semua suara yang sudah terlanjur antre di memori
+    // PERBAIKAN FATAL: Bunuh semua suara yang sudah terlanjur antre!
     this.activeOscillators.forEach(osc => {
       try {
         osc.stop();
         osc.disconnect();
       } catch (e) {
-        // Abaikan jika oscillator sudah keburu mati
+        // Abaikan jika sudah keburu mati
       }
     });
     this.activeOscillators = [];
+  }
 
-    // 3. Reset ketukan kembali ke 0 (Hitungan 1) dan set waktu ke SAAT INI JUGA
+  public sync() {
+    if (!this.isPlaying || !this.audioContext) return;
+
+    if (this.timerID) {
+      clearTimeout(this.timerID);
+    }
+
+    this.activeOscillators.forEach(osc => {
+      try {
+        osc.stop();
+        osc.disconnect();
+      } catch (e) {}
+    });
+    this.activeOscillators = [];
+
     this.currentBeat = 0;
     this.nextNoteTime = this.audioContext.currentTime;
 
-    // 4. Jalankan ulang schedulernya
     this.scheduler();
   }
 
