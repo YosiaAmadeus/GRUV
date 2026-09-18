@@ -82,22 +82,41 @@ export class MetronomeEngine {
     this.timerID = setTimeout(() => this.scheduler(), this.lookahead);
   }
 
-  public start() {
+// Tambahkan kata 'async' di sini
+  public async start() {
     if (this.isPlaying) return;
+    
+    // 1. Langsung ubah status agar tombol UI berubah menjadi "Stop" tanpa delay
+    this.isPlaying = true;
 
-    // 1. Eksekusi unlock secara sinkron (langsung merespons jari)
-    this.unlockAudioContext();
-
-    // 2. Bangunkan mesin jika masih tertidur
-    if (this.audioContext!.state === 'suspended') {
-      this.audioContext!.resume();
+    if (!this.audioContext) {
+      this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
     }
 
-    this.isPlaying = true;
+    // 2. Eksekusi trik suara bisu untuk membuka gembok
+    if (!this.unlocked) {
+      const osc = this.audioContext.createOscillator();
+      const gain = this.audioContext.createGain();
+      gain.gain.value = 0;
+      osc.connect(gain);
+      gain.connect(this.audioContext.destination);
+      osc.start(this.audioContext.currentTime);
+      osc.stop(this.audioContext.currentTime + 0.001);
+      this.unlocked = true;
+    }
+
+    // 3. TUNGGU sampai hardware HP benar-benar menyala (Ini kunci utamanya!)
+    if (this.audioContext.state === 'suspended') {
+      await this.audioContext.resume();
+    }
+
+    // 4. Cegah Bug Zombie: 
+    // Kalau saat proses 'menunggu' di atas user tiba-tiba memencet Stop, batalkan semuanya!
+    if (!this.isPlaying) return;
+
+    // 5. Karena hardware sudah bangun, jam (currentTime) sudah valid. Mulai penjadwalan!
     this.currentBeat = 0;
-    
-    // 3. Kasih jeda super kecil (10 milidetik) agar hardware HP bersiap
-    this.nextNoteTime = this.audioContext!.currentTime + 0.01; 
+    this.nextNoteTime = this.audioContext.currentTime + 0.01; 
     
     this.scheduler();
   }
