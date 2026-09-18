@@ -64,23 +64,29 @@ export class MetronomeEngine {
     this.timerID = setTimeout(() => this.scheduler(), this.lookahead);
   }
 
-  public start() {
+public start() {
     if (this.isPlaying) return;
 
     if (!this.audioContext) {
       this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
     }
 
-    if (this.audioContext.state === 'suspended') {
-      this.audioContext.resume();
-    }
-
+    // Ubah status ke true agar UI langsung merespons tombol berhenti
     this.isPlaying = true;
     this.currentBeat = 0;
-    // Langsung eksekusi tanpa delay
-    this.nextNoteTime = this.audioContext.currentTime; 
-    
-    this.scheduler();
+
+    if (this.audioContext.state === 'suspended') {
+      // Tunggu sampai mesin audio benar-benar terbangun oleh HP, baru mulai scheduler
+      this.audioContext.resume().then(() => {
+        if (!this.isPlaying) return; // Jaga-jaga kalau user keburu menekan stop
+        this.nextNoteTime = this.audioContext!.currentTime;
+        this.scheduler();
+      });
+    } else {
+      // Jika sudah running, langsung tembakkan
+      this.nextNoteTime = this.audioContext.currentTime;
+      this.scheduler();
+    }
   }
 
   public stop() {
