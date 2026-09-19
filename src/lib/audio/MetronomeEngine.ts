@@ -2,6 +2,7 @@ export class MetronomeEngine {
   private audioContext: AudioContext | null = null;
   private isPlaying: boolean = false;
   private bpm: number = 120;
+  private isMuted: boolean = false; // <-- SAKLAR MUTE DITAMBAHKAN DI SINI
   
   private lookahead: number = 25; 
   private scheduleAheadTime: number = 0.1; 
@@ -40,6 +41,11 @@ export class MetronomeEngine {
 
   private playClick(time: number) {
     if (!this.audioContext) return;
+    
+    // --> LOGIKA MUTE: Jika saklar nyala, batalkan pembuatan suara!
+    // Mesin waktu (scheduler) tetap berjalan, hanya speakernya yang "dicabut"
+    if (this.isMuted) return;
+
     const osc = this.audioContext.createOscillator();
     const envelope = this.audioContext.createGain();
 
@@ -126,4 +132,21 @@ export class MetronomeEngine {
   public setBpm(newBpm: number) {
     this.bpm = Math.min(Math.max(newBpm, 30), 300);
   }
+
+  // --> FUNGSI BARU UNTUK UI: MENGUBAH STATUS MUTE
+public setMuted(muted: boolean) {
+  this.isMuted = muted;
+  
+  // Jika tombol Mute ditekan, langsung tembak mati semua suara 
+  // yang mungkin sedang berbunyi atau mengantri di detik ini juga!
+  if (muted) {
+    this.activeOscillators.forEach(osc => {
+      try {
+        osc.stop();
+        osc.disconnect();
+      } catch (e) {}
+    });
+    this.activeOscillators = [];
+  }
+}
 }
