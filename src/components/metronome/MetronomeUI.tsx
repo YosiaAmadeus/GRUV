@@ -3,10 +3,13 @@
 import { useState, useEffect, useRef } from "react";
 import { Play, Square, Minus, Plus, RefreshCw, Power } from "lucide-react";
 import { MetronomeEngine } from "../../lib/audio/MetronomeEngine";
+import { useSession, signIn, signOut } from "next-auth/react";
+import { LogIn, LogOut } from "lucide-react"; // Kita pinjam ikon dari lucide
 
 export default function MetronomeUI() {
   // STATE BARU: Untuk mengecek apakah user sudah melewati layar "Let's Start"
   const [isEngineReady, setIsEngineReady] = useState(false);
+  const { data: session } = useSession();
   
   const [bpm, setBpm] = useState(120);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -114,8 +117,31 @@ export default function MetronomeUI() {
 
   // LAYAR 2: Tampilan Metronom Utama (yang sudah ada)
   return (
-    <div className="flex flex-col items-center justify-center space-y-12 p-8 bg-neutral-900 rounded-3xl shadow-2xl w-full max-w-md border border-neutral-800 h-112.5">
-      
+    <div className="relative flex flex-col items-center justify-center space-y-12 p-8 bg-neutral-900 rounded-3xl shadow-2xl w-full max-w-md border border-neutral-800 h-112.5">
+      {/* Header Auth */}
+  <div className="absolute top-6 right-6 flex items-center gap-3">
+    {session ? (
+      <div className="flex items-center gap-2 bg-neutral-800/80 py-1.5 px-2 rounded-full border border-neutral-700 shadow-sm backdrop-blur-md">
+        <img src={session.user?.image || ""} alt="Profile" className="w-6 h-6 rounded-full" />
+        <span className="text-xs font-medium text-white max-w-20 truncate">
+          {session.user?.name?.split(" ")[0]}
+        </span>
+        <button 
+          onPointerDown={() => signOut()} 
+          className="p-1.5 text-neutral-400 hover:text-red-400 transition-colors touch-manipulation"
+        >
+          <LogOut size={14} />
+        </button>
+      </div>
+    ) : (
+      <button 
+        onPointerDown={() => signIn('google')}
+        className="flex items-center gap-2 bg-neutral-800 hover:bg-neutral-700 py-2 px-4 rounded-full text-sm font-medium text-white transition-colors border border-neutral-700 shadow-sm touch-manipulation"
+      >
+        <LogIn size={14} /> Sign In
+      </button>
+    )}
+  </div>
       <div className="text-center space-y-2">
         <h2 className="text-neutral-400 text-sm font-semibold tracking-widest uppercase">Tempo</h2>
         <div className="text-7xl font-black text-white tracking-tighter select-none">
