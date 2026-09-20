@@ -104,20 +104,20 @@ export class MetronomeEngine {
   }
 
 public start() {
-    if (this.isPlaying) return;
-    this.isPlaying = true;
+        if (this.isPlaying) return;
+        this.isPlaying = true;
 
-    if (!this.audioContext) this.unlock();
-    if (this.audioContext && this.audioContext.state === 'suspended') this.audioContext.resume();
+        if (!this.audioContext) this.unlock();
+        if (this.audioContext && this.audioContext.state === 'suspended') this.audioContext.resume();
 
-    this.currentSubdivisionNote = 0;
-    
-    // HACK: Tambahkan buffer 0.05 detik (50ms) pada nada pertama. 
-    // Ini memberi waktu chip audio HP untuk "bernapas" agar ketukan pertama tidak lag/tercekat.
-    this.nextNoteTime = this.audioContext!.currentTime + 0.05; 
-    
-    this.scheduler();
-  }
+        this.currentSubdivisionNote = 0;
+        
+        // KEMBALI KE NOL LATENSI
+        this.nextNoteTime = this.audioContext!.currentTime; 
+        
+        this.scheduler();
+      }
+      
   public stop() {
     this.isPlaying = false; 
     if (this.timerID) { clearTimeout(this.timerID); this.timerID = null; }

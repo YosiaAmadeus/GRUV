@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Play, Square, Minus, Plus, RefreshCw, Power, LogIn, LogOut, ListMusic, ChevronLeft, ChevronRight, Save, Loader2, Edit3, PlusCircle, Trash2, Volume2, VolumeX, Hand } from "lucide-react";
+import { Play, Square, Minus, Plus, RefreshCw, Power, LogIn, LogOut, ListMusic, ChevronLeft, ChevronRight, Save, Loader2, Edit3, PlusCircle, Trash2, Volume2, VolumeX, Hand, Activity } from "lucide-react";
 import { MetronomeEngine } from "../../lib/audio/MetronomeEngine";
 import { useSession, signIn, signOut } from "next-auth/react";
 import SetlistPanel from "./SetlistPanel";
@@ -10,6 +10,9 @@ import { addTrack, getMySetlists, updateTrackSettings, deleteTrack } from "@/act
 export default function MetronomeUI() {
   const { data: session } = useSession();
   const [isSetlistOpen, setIsSetlistOpen] = useState(false);
+  
+  // STATE KEMBALI MENGGUNAKAN isEngineReady UNTUK LAYAR PEMANCING
+  const [isEngineReady, setIsEngineReady] = useState(false);
   
   const [bpm, setBpm] = useState(120);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -47,20 +50,9 @@ export default function MetronomeUI() {
       setVisualBeat(beat);
       setVisualSub(sub);
     };
-
-    const unlockAudio = () => {
-      if (engineRef.current) engineRef.current.unlock();
-      document.removeEventListener('touchstart', unlockAudio);
-      document.removeEventListener('click', unlockAudio);
-    };
-    document.addEventListener('touchstart', unlockAudio, { once: true });
-    document.addEventListener('click', unlockAudio, { once: true });
-
     return () => {
       engineRef.current?.stop();
       releaseWakeLock();
-      document.removeEventListener('touchstart', unlockAudio);
-      document.removeEventListener('click', unlockAudio);
     };
   }, []);
 
@@ -71,9 +63,16 @@ export default function MetronomeUI() {
   const requestWakeLock = async () => { try { if ('wakeLock' in navigator) wakeLockRef.current = await navigator.wakeLock.request('screen'); } catch (err) {} };
   const releaseWakeLock = async () => { if (wakeLockRef.current !== null) { await wakeLockRef.current.release(); wakeLockRef.current = null; } };
   
+  // FUNGSI UNTUK TOMBOL PEMANCING
+  const handlePowerOn = () => {
+    if (engineRef.current) {
+      engineRef.current.unlock(); // Chip audio dipanaskan di sini
+    }
+    setIsEngineReady(true);
+  };
+
   const togglePlay = () => { 
     if (!engineRef.current) return; 
-    engineRef.current.unlock();
     if (isPlaying) { 
       engineRef.current.stop(); 
       setIsPlaying(false); 
@@ -91,7 +90,6 @@ export default function MetronomeUI() {
   const adjustBpm = (amount: number) => setBpm((prev) => Math.min(Math.max(prev + amount, 30), 300));
 
   const handleTapTempo = () => {
-    if (engineRef.current) engineRef.current.unlock();
     const now = performance.now();
     let newTimes = [...tapTimes, now];
     if (tapTimes.length > 0 && now - tapTimes[tapTimes.length - 1] > 2000) newTimes = [now]; 
@@ -106,47 +104,42 @@ export default function MetronomeUI() {
     }
   };
 
-  const handleSelectSetlist = (setlist: any) => { 
-    setActiveSetlist(setlist); 
-    if (setlist.tracks && setlist.tracks.length > 0) { 
-      setCurrentTrackIndex(0); 
-      setBpm(setlist.tracks[0].bpm); 
-      setTimeSignature(setlist.tracks[0].timeSignature || 4);
-      setSubdivision(setlist.tracks[0].subdivision || 1);
-    } else { 
-      setCurrentTrackIndex(0); 
-    } 
-  };
-  
-  const goNext = () => { 
-    if (activeSetlist && activeSetlist.tracks && activeSetlist.tracks.length > 0) { 
-      let nextIndex = currentTrackIndex + 1; 
-      if (nextIndex >= activeSetlist.tracks.length) nextIndex = 0;
-      setCurrentTrackIndex(nextIndex); 
-      setBpm(activeSetlist.tracks[nextIndex].bpm);
-      setTimeSignature(activeSetlist.tracks[nextIndex].timeSignature || 4);
-      setSubdivision(activeSetlist.tracks[nextIndex].subdivision || 1);
-    } 
-  };
-  
-  const goPrev = () => { 
-    if (activeSetlist && activeSetlist.tracks && activeSetlist.tracks.length > 0) { 
-      let prevIndex = currentTrackIndex - 1; 
-      if (prevIndex < 0) prevIndex = activeSetlist.tracks.length - 1;
-      setCurrentTrackIndex(prevIndex); 
-      setBpm(activeSetlist.tracks[prevIndex].bpm); 
-      setTimeSignature(activeSetlist.tracks[prevIndex].timeSignature || 4);
-      setSubdivision(activeSetlist.tracks[prevIndex].subdivision || 1);
-    } 
-  };
-  
+  const handleSelectSetlist = (setlist: any) => { setActiveSetlist(setlist); if (setlist.tracks && setlist.tracks.length > 0) { setCurrentTrackIndex(0); setBpm(setlist.tracks[0].bpm); setTimeSignature(setlist.tracks[0].timeSignature || 4); setSubdivision(setlist.tracks[0].subdivision || 1); } else { setCurrentTrackIndex(0); } };
+  const goNext = () => { if (activeSetlist && activeSetlist.tracks && activeSetlist.tracks.length > 0) { let nextIndex = currentTrackIndex + 1; if (nextIndex >= activeSetlist.tracks.length) nextIndex = 0; setCurrentTrackIndex(nextIndex); setBpm(activeSetlist.tracks[nextIndex].bpm); setTimeSignature(activeSetlist.tracks[nextIndex].timeSignature || 4); setSubdivision(activeSetlist.tracks[nextIndex].subdivision || 1); } };
+  const goPrev = () => { if (activeSetlist && activeSetlist.tracks && activeSetlist.tracks.length > 0) { let prevIndex = currentTrackIndex - 1; if (prevIndex < 0) prevIndex = activeSetlist.tracks.length - 1; setCurrentTrackIndex(prevIndex); setBpm(activeSetlist.tracks[prevIndex].bpm); setTimeSignature(activeSetlist.tracks[prevIndex].timeSignature || 4); setSubdivision(activeSetlist.tracks[prevIndex].subdivision || 1); } };
   const handleUpdateSettings = async () => { if (!currentTrack) return; setIsProcessing(true); try { await updateTrackSettings(currentTrack.id, bpm, timeSignature, subdivision); const updated = await getMySetlists(); const active = updated.find((s: any) => s.id === activeSetlist.id); if (active) setActiveSetlist(active); } catch (err) { console.error(err); } finally { setIsProcessing(false); } };
   const handleSaveNewTrack = async (e: React.FormEvent) => { e.preventDefault(); if (!activeSetlist || !newTrackTitle.trim()) return; setIsProcessing(true); try { await addTrack(activeSetlist.id, newTrackTitle, bpm, timeSignature, subdivision); const updated = await getMySetlists(); const active = updated.find((s: any) => s.id === activeSetlist.id); if (active) { setActiveSetlist(active); setCurrentTrackIndex(active.tracks.length - 1); } setIsSaveModalOpen(false); setNewTrackTitle(""); } catch (err) { console.error(err); } finally { setIsProcessing(false); } };
   const confirmDeleteTrack = async () => { if (!currentTrack || !activeSetlist) return; setIsDeletingTrack(true); try { await deleteTrack(currentTrack.id, activeSetlist.id); const updated = await getMySetlists(); const active = updated.find((s: any) => s.id === activeSetlist.id); if (active) { setActiveSetlist(active); if (active.tracks.length === 0) setCurrentTrackIndex(0); else { const newIndex = Math.min(currentTrackIndex, active.tracks.length - 1); setCurrentTrackIndex(newIndex); setBpm(active.tracks[newIndex].bpm); setTimeSignature(active.tracks[newIndex].timeSignature || 4); setSubdivision(active.tracks[newIndex].subdivision || 1); } } } catch (err) { console.error(err); } finally { setIsDeletingTrack(false); setIsDeleteTrackModalOpen(false); } };
 
+  // LAYAR PEMANCING YANG DESAINNYA LEBIH PROFESIONAL
+  if (!isEngineReady) {
+    return (
+      <div className="fixed inset-0 sm:relative flex flex-col w-full h-[100dvh] sm:h-auto sm:min-h-[650px] max-w-md mx-auto bg-neutral-900 sm:rounded-3xl shadow-2xl sm:border border-neutral-800 overflow-hidden items-center justify-center p-6">
+        <div className="text-center space-y-8 flex flex-col items-center">
+          <button 
+            onClick={handlePowerOn} 
+            className="w-32 h-32 bg-neutral-800 border-2 border-emerald-500/50 rounded-full flex flex-col items-center justify-center text-emerald-500 shadow-[0_0_30px_rgba(16,185,129,0.2)] hover:bg-emerald-500 hover:text-neutral-900 transition-all active:scale-95 group"
+          >
+            <Power size={48} className="mb-2 group-hover:scale-110 transition-transform" />
+            <span className="font-black tracking-widest text-xs uppercase">Power On</span>
+          </button>
+          
+          <div className="space-y-2">
+            <h2 className="text-xl font-bold text-white tracking-widest uppercase flex items-center justify-center gap-2">
+              <Activity size={20} className="text-emerald-500" />
+              Audio Engine
+            </h2>
+            <p className="text-neutral-400 text-xs px-4 max-w-[250px]">
+              Menghidupkan modul WebAudio untuk performa bebas latensi (0ms).
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    // PADDING KIRI KANAN DIPERKECIL (px-3) AGAR TOMBOL BISA MAKSIMAL
-    <div className="fixed inset-0 sm:relative sm:inset-auto flex flex-col w-full h-[100dvh] sm:h-auto sm:min-h-[650px] max-w-md mx-auto bg-neutral-900 sm:rounded-3xl shadow-2xl sm:border border-neutral-800 overflow-hidden pt-12 pb-3 px-3 sm:px-6">
+    <div className="fixed inset-0 sm:relative sm:inset-auto flex flex-col w-full h-[100dvh] sm:h-auto sm:min-h-[700px] max-w-md mx-auto bg-neutral-900 sm:rounded-3xl shadow-2xl sm:border border-neutral-800 overflow-hidden pt-12 pb-4 px-3 sm:px-6">
       
       {session && (
         <div className="absolute top-3 left-3 z-10">
@@ -169,26 +162,25 @@ export default function MetronomeUI() {
 
       <div className="flex flex-col w-full h-full flex-1 justify-between gap-1.5">
         
+        {/* SETLIST BANNER */}
         {activeSetlist && (
           <div className="w-full bg-neutral-800/40 border border-neutral-700/50 rounded-2xl p-2 flex flex-col gap-1.5 animate-in fade-in duration-200 shrink-0">
             <div className="flex justify-between items-center">
               <div className="flex flex-col overflow-hidden pr-2">
                 <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-wider truncate">{activeSetlist.name}</span>
-                <span className={`font-medium text-sm truncate ${isDraftMode ? 'text-neutral-400 italic' : 'text-white'}`}>
-                  {isDraftMode ? "[ Ketuk simpan ]" : currentTrack?.title}
-                </span>
+                <span className={`font-medium text-sm truncate ${isDraftMode ? 'text-neutral-400 italic' : 'text-white'}`}>{isDraftMode ? "[ Ketuk simpan ]" : currentTrack?.title}</span>
               </div>
               <button onClick={() => setActiveSetlist(null)} className="text-neutral-500 hover:text-red-400 text-[10px] font-bold bg-neutral-800/80 px-2 py-1.5 rounded-lg transition-colors touch-manipulation">EXIT</button>
             </div>
             <div className="flex gap-2">
               {isDraftMode ? (
-                <button onClick={() => setIsSaveModalOpen(true)} className="flex-1 py-1.5 bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 rounded-lg text-xs font-bold flex items-center justify-center gap-1 touch-manipulation"><Save size={14} /> Simpan Lagu Baru</button>
+                <button onClick={() => setIsSaveModalOpen(true)} className="flex-1 py-1.5 bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 rounded-lg text-xs font-bold flex items-center justify-center gap-1 touch-manipulation"><Save size={14} /> Simpan Lagu</button>
               ) : (
                 <>
                   <div className="flex-1 flex gap-2">
                     {hasSettingsChanged ? (
                       <button onClick={handleUpdateSettings} disabled={isProcessing} className="flex-1 py-1.5 bg-blue-500/10 text-blue-500 border border-blue-500/30 rounded-lg text-xs font-bold flex items-center justify-center gap-1 touch-manipulation">
-                        {isProcessing ? <Loader2 size={14} className="animate-spin" /> : <><Edit3 size={14} /> Update Setting</>}
+                        {isProcessing ? <Loader2 size={14} className="animate-spin" /> : <><Edit3 size={14} /> Update</>}
                       </button>
                     ) : (
                       activeSetlist.tracks?.length < 15 && (
@@ -203,51 +195,48 @@ export default function MetronomeUI() {
           </div>
         )}
 
-        <div className="flex items-center justify-between w-full flex-1 min-h-[140px] py-1">
-          {/* TOMBOL PANAH KEMBALI BESAR (w-16 h-36, icon 48px) */}
-          <button onClick={goPrev} disabled={!activeSetlist || isDraftMode || activeSetlist.tracks?.length <= 1} className={`w-16 h-36 shrink-0 flex items-center justify-center rounded-2xl transition-all touch-manipulation ${activeSetlist && !isDraftMode && activeSetlist.tracks?.length > 1 ? 'bg-neutral-800 hover:bg-neutral-700 text-white active:scale-95 shadow-md border border-neutral-700' : 'bg-transparent text-neutral-800 opacity-50'}`}><ChevronLeft size={48} /></button>
+        {/* AREA TENGAH: TEMPO DAN SETTINGS (DIANGKAT KE ATAS) */}
+        <div className="flex flex-col w-full flex-1 justify-center min-h-0 py-1">
           
-          <div className="text-center flex-1 flex flex-col items-center justify-center mx-1">
-            <div className="flex justify-center items-center gap-1 w-full mb-1 h-[32px]">
-              {Array.from({ length: timeSignature }).map((_, i) => {
-                const beatNum = i + 1;
-                const isCurrentBeat = isPlaying && visualBeat === beatNum;
-                const isMain = isCurrentBeat && visualSub === 0;
-                let circleClass = 'bg-neutral-800 text-neutral-600 border border-neutral-700/50'; 
-                if (isCurrentBeat) {
-                  if (isMain) circleClass = beatNum === 1 ? 'bg-amber-500 text-amber-950 scale-110 shadow-[0_0_12px_rgba(245,158,11,0.5)]' : 'bg-emerald-500 text-emerald-950 scale-110 shadow-[0_0_12px_rgba(16,185,129,0.5)]'; 
-                  else circleClass = 'bg-emerald-500/30 text-emerald-200 border-emerald-500/50 scale-105';
-                }
-                return (
-                  // VISUAL CUES KEMBALI BESAR (w-7 h-7)
-                  <div key={beatNum} className={`flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold transition-all duration-75 ${circleClass}`}>{beatNum}</div>
-                );
-              })}
+          <div className="flex items-center justify-between w-full mb-2">
+            <button onClick={goPrev} disabled={!activeSetlist || isDraftMode || activeSetlist.tracks?.length <= 1} className={`w-12 h-24 sm:w-16 sm:h-32 shrink-0 flex items-center justify-center rounded-2xl transition-all touch-manipulation ${activeSetlist && !isDraftMode && activeSetlist.tracks?.length > 1 ? 'bg-neutral-800 hover:bg-neutral-700 text-white active:scale-95 shadow-md border border-neutral-700' : 'bg-transparent text-neutral-800 opacity-50'}`}><ChevronLeft size={40} /></button>
+            
+            <div className="text-center flex-1 flex flex-col items-center justify-center mx-1">
+              <div className="flex justify-center items-center gap-1 w-full h-[28px] sm:h-[32px] mb-1">
+                {Array.from({ length: timeSignature }).map((_, i) => {
+                  const beatNum = i + 1;
+                  const isCurrentBeat = isPlaying && visualBeat === beatNum;
+                  const isMain = isCurrentBeat && visualSub === 0;
+                  let circleClass = 'bg-neutral-800 text-neutral-600 border border-neutral-700/50'; 
+                  if (isCurrentBeat) {
+                    if (isMain) circleClass = beatNum === 1 ? 'bg-amber-500 text-amber-950 scale-110 shadow-[0_0_12px_rgba(245,158,11,0.5)]' : 'bg-emerald-500 text-emerald-950 scale-110 shadow-[0_0_12px_rgba(16,185,129,0.5)]'; 
+                    else circleClass = 'bg-emerald-500/30 text-emerald-200 border-emerald-500/50 scale-105';
+                  }
+                  return (
+                    <div key={beatNum} className={`flex items-center justify-center w-5 h-5 sm:w-7 sm:h-7 rounded-full text-[9px] sm:text-xs font-bold transition-all duration-75 ${circleClass}`}>{beatNum}</div>
+                  );
+                })}
+              </div>
+
+              <div className="text-[4rem] sm:text-[5rem] leading-[1] font-black text-white tracking-tighter select-none">{bpm}</div>
+              
+              <button onPointerDown={handleTapTempo} className="mt-2 w-32 sm:w-40 py-2 sm:py-3 shrink-0 bg-neutral-800/90 hover:bg-neutral-700 text-emerald-500 border-2 border-neutral-700 rounded-3xl flex items-center justify-center gap-2 active:scale-95 transition-all touch-manipulation shadow-md">
+                <Hand size={16} /> <span className="text-xs sm:text-sm font-bold tracking-widest uppercase">TAP</span>
+              </button>
             </div>
 
-            {/* TEXT TEMPO KEMBALI RAKSASA (5rem) */}
-            <div className="text-[5rem] leading-[1] font-black text-white tracking-tighter select-none">{bpm}</div>
-            
-            {/* TAP TEMPO KEMBALI BESAR (w-48, icon 20px) */}
-            <button onPointerDown={handleTapTempo} className="mt-3 w-48 py-4 shrink-0 bg-neutral-800/90 hover:bg-neutral-700 text-emerald-500 border-2 border-neutral-700 rounded-3xl flex items-center justify-center gap-2 active:scale-95 transition-all touch-manipulation shadow-md">
-              <Hand size={20} /> <span className="text-base font-bold tracking-widest uppercase">TAP</span>
-            </button>
+            <button onClick={goNext} disabled={!activeSetlist || isDraftMode || activeSetlist.tracks?.length <= 1} className={`w-12 h-24 sm:w-16 sm:h-32 shrink-0 flex items-center justify-center rounded-2xl transition-all touch-manipulation ${activeSetlist && !isDraftMode && activeSetlist.tracks?.length > 1 ? 'bg-neutral-800 hover:bg-neutral-700 text-white active:scale-95 shadow-md border border-neutral-700' : 'bg-transparent text-neutral-800 opacity-50'}`}><ChevronRight size={40} /></button>
           </div>
 
-          <button onClick={goNext} disabled={!activeSetlist || isDraftMode || activeSetlist.tracks?.length <= 1} className={`w-16 h-36 shrink-0 flex items-center justify-center rounded-2xl transition-all touch-manipulation ${activeSetlist && !isDraftMode && activeSetlist.tracks?.length > 1 ? 'bg-neutral-800 hover:bg-neutral-700 text-white active:scale-95 shadow-md border border-neutral-700' : 'bg-transparent text-neutral-800 opacity-50'}`}><ChevronRight size={48} /></button>
-        </div>
-
-        <div className="flex flex-col shrink-0">
-          {/* TOMBOL PLUS MINUS KEMBALI BESAR (p-4) */}
           <div className="flex items-center w-full gap-3 mb-1.5">
-            <button onClick={() => adjustBpm(-1)} className="p-4 bg-neutral-800 rounded-2xl hover:bg-neutral-700 text-white touch-manipulation shrink-0"><Minus size={24} /></button>
+            <button onClick={() => adjustBpm(-1)} className="p-3 sm:p-4 bg-neutral-800 rounded-2xl hover:bg-neutral-700 text-white touch-manipulation shrink-0"><Minus size={22} /></button>
             <input type="range" min="30" max="300" value={bpm} onChange={handleSliderChange} className="w-full h-3 bg-neutral-700 rounded-lg appearance-none cursor-pointer accent-emerald-500" />
-            <button onClick={() => adjustBpm(1)} className="p-4 bg-neutral-800 rounded-2xl hover:bg-neutral-700 text-white touch-manipulation shrink-0"><Plus size={24} /></button>
+            <button onClick={() => adjustBpm(1)} className="p-3 sm:p-4 bg-neutral-800 rounded-2xl hover:bg-neutral-700 text-white touch-manipulation shrink-0"><Plus size={22} /></button>
           </div>
 
-          <div className="flex w-full bg-neutral-800/60 p-1.5 rounded-2xl shadow-sm border border-neutral-700/50 mb-1">
+          <div className="flex w-full bg-neutral-800/60 p-1.5 rounded-2xl shadow-sm border border-neutral-700/50 mb-1.5">
             {[3, 4, 6, 7, 8].map(ts => (
-              <button key={ts} onClick={() => setTimeSignature(ts)} className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all touch-manipulation ${timeSignature === ts ? 'bg-amber-500/10 text-amber-500 shadow-sm border border-amber-500/30' : 'text-neutral-400 hover:text-neutral-200 border border-transparent'}`}>
+              <button key={ts} onClick={() => setTimeSignature(ts)} className={`flex-1 py-1.5 sm:py-2 text-xs font-bold rounded-xl transition-all touch-manipulation ${timeSignature === ts ? 'bg-amber-500/10 text-amber-500 shadow-sm border border-amber-500/30' : 'text-neutral-400 hover:text-neutral-200 border border-transparent'}`}>
                 {ts}/4
               </button>
             ))}
@@ -255,31 +244,31 @@ export default function MetronomeUI() {
 
           <div className="flex w-full bg-neutral-800/80 p-1.5 rounded-2xl shadow-sm border border-neutral-700/50">
             {[ { label: '1/4', val: 1 }, { label: '1/8', val: 2 }, { label: 'Trip', val: 3 }, { label: '1/16', val: 4 } ].map(item => (
-              <button key={item.val} onClick={() => setSubdivision(item.val)} className={`flex-1 py-3 text-sm font-bold rounded-xl transition-all touch-manipulation tracking-wider ${subdivision === item.val ? 'bg-emerald-500/10 text-emerald-500 shadow-sm border border-emerald-500/30' : 'text-neutral-400 hover:text-neutral-200 border border-transparent'}`}>
+              <button key={item.val} onClick={() => setSubdivision(item.val)} className={`flex-1 py-2 sm:py-3 text-xs sm:text-sm font-bold rounded-xl transition-all touch-manipulation tracking-wider ${subdivision === item.val ? 'bg-emerald-500/10 text-emerald-500 shadow-sm border border-emerald-500/30' : 'text-neutral-400 hover:text-neutral-200 border border-transparent'}`}>
                 {item.label}
               </button>
             ))}
           </div>
+        </div>
 
-          {/* PERHATIKAN INI: mt-5 DITAMBAHKAN UNTUK MENJAUHKAN TOMBOL PLAY DARI PENGATURAN DI ATASNYA */}
-          <div className="flex flex-col w-full gap-2 mt-5">
-            {/* TOMBOL PLAY KEMBALI RAKSASA (py-8, text-3xl) */}
-            <button onClick={togglePlay} className={`w-full py-7 sm:py-8 rounded-[2rem] flex items-center justify-center gap-4 text-3xl font-black transition-all duration-75 touch-manipulation shrink-0 ${isPlaying ? 'bg-red-500/10 text-red-500 border-2 border-red-500/50 shadow-[inset_0_0_20px_rgba(239,68,68,0.2)]' : 'bg-emerald-500 text-neutral-950 border-2 border-emerald-400 hover:bg-emerald-400 shadow-[0_10px_30px_rgba(16,185,129,0.3)] active:scale-[0.98]'}`}>
-              {isPlaying ? <><Square size={32} fill="currentColor" /> STOP</> : <><Play size={32} fill="currentColor" /> PLAY</>}
+        {/* AREA BAWAH: TOMBOL EKSEKUSI RAKSASA (Dengan Jarak Aman) */}
+        {/* margin-top (mt-6) ini yang menjauhkan tombol dari pengaturan di atasnya! */}
+        <div className="flex flex-col w-full gap-2 mt-6 sm:mt-10 shrink-0 mb-1">
+          <button onClick={togglePlay} className={`w-full py-8 sm:py-10 rounded-[2rem] flex items-center justify-center gap-4 text-4xl sm:text-4xl font-black transition-all duration-75 touch-manipulation shrink-0 ${isPlaying ? 'bg-red-500/10 text-red-500 border-2 border-red-500/50 shadow-[inset_0_0_20px_rgba(239,68,68,0.2)]' : 'bg-emerald-500 text-neutral-950 border-2 border-emerald-400 hover:bg-emerald-400 shadow-[0_10px_30px_rgba(16,185,129,0.3)] active:scale-[0.98]'}`}>
+            {isPlaying ? <><Square size={36} fill="currentColor" /> STOP</> : <><Play size={36} fill="currentColor" /> PLAY</>}
+          </button>
+          <div className="flex w-full gap-2 sm:gap-3">
+            <button onClick={handleSync} disabled={!isPlaying} className={`flex-1 py-5 sm:py-6 rounded-2xl flex items-center justify-center gap-2 text-xl font-bold border-2 transition-all touch-manipulation shrink-0 ${isPlaying ? 'bg-blue-500/10 text-blue-500 border-blue-500/50 active:bg-blue-500/30' : 'bg-neutral-900 text-neutral-700 border-neutral-800'}`}>
+              <RefreshCw size={24} strokeWidth={3} className={isPlaying ? "active:rotate-180 transition-transform" : ""} /> SYNC
             </button>
-            <div className="flex w-full gap-3">
-              {/* TOMBOL SYNC & MUTE KEMBALI BESAR (py-4/py-5) */}
-              <button onClick={handleSync} disabled={!isPlaying} className={`flex-1 py-4 sm:py-5 rounded-2xl flex items-center justify-center gap-2 text-lg font-bold border-2 transition-all touch-manipulation shrink-0 ${isPlaying ? 'bg-blue-500/10 text-blue-500 border-blue-500/50 active:bg-blue-500/30' : 'bg-neutral-900 text-neutral-700 border-neutral-800'}`}>
-                <RefreshCw size={22} strokeWidth={3} className={isPlaying ? "active:rotate-180 transition-transform" : ""} /> SYNC
-              </button>
-              <button onClick={toggleMute} className={`flex-1 py-4 sm:py-5 rounded-2xl flex items-center justify-center gap-2 text-lg font-bold border-2 transition-all touch-manipulation shrink-0 ${isMuted ? 'bg-amber-500/10 text-amber-500 border-amber-500/50' : 'bg-neutral-800 text-neutral-400 border-neutral-700 hover:bg-neutral-700'}`}>
-                {isMuted ? <VolumeX size={22} /> : <Volume2 size={22} />} {isMuted ? 'MUTED' : 'MUTE'}
-              </button>
-            </div>
+            <button onClick={toggleMute} className={`flex-1 py-5 sm:py-6 rounded-2xl flex items-center justify-center gap-2 text-xl font-bold border-2 transition-all touch-manipulation shrink-0 ${isMuted ? 'bg-amber-500/10 text-amber-500 border-amber-500/50' : 'bg-neutral-800 text-neutral-400 border-neutral-700 hover:bg-neutral-700'}`}>
+              {isMuted ? <VolumeX size={24} /> : <Volume2 size={24} />} {isMuted ? 'MUTED' : 'MUTE'}
+            </button>
           </div>
         </div>
       </div>
       
+      {/* Modal disembunyikan dalam code-snippet untuk menghemat layar */}
       <SetlistPanel isOpen={isSetlistOpen} onClose={() => setIsSetlistOpen(false)} onSelectSetlist={handleSelectSetlist} />
 
       {/* Modal Simpan */}
