@@ -158,7 +158,7 @@ export default function MetronomeUI() {
 
   if (!isEngineReady) {
     return (
-      <div className="flex flex-col items-center justify-center p-8 bg-neutral-900 rounded-3xl shadow-2xl w-full max-w-md border border-neutral-800 space-y-8 min-h-[500px]">
+      <div className="flex flex-col items-center justify-center p-8 bg-neutral-900 rounded-3xl shadow-2xl w-full max-w-md border border-neutral-800 space-y-8 min-h-125">
         <div className="text-center space-y-3">
           <div className="w-16 h-16 bg-neutral-800 rounded-full flex items-center justify-center mx-auto mb-6">
             <Power className="text-emerald-500" size={32} />
@@ -174,7 +174,7 @@ export default function MetronomeUI() {
   }
 
   return (
-    <div className="relative flex flex-col w-full max-w-md bg-neutral-900 rounded-3xl shadow-2xl border border-neutral-800 min-h-[550px] overflow-hidden pt-20 pb-6 px-5 sm:px-6">
+    <div className="relative flex flex-col w-full max-w-md bg-neutral-900 rounded-3xl shadow-2xl border border-neutral-800 min-h-137.5 overflow-hidden pt-20 pb-6 px-5 sm:px-6">
       
       {session && (
         <div className="absolute top-5 left-5 z-10">
@@ -286,7 +286,7 @@ export default function MetronomeUI() {
         <div className="flex flex-col w-full gap-3 mt-1">
           <button 
             onPointerDown={togglePlay} 
-            className={`w-full py-8 rounded-[2rem] flex items-center justify-center gap-4 text-3xl font-black transition-all duration-75 touch-manipulation ${
+            className={`w-full py-8 rounded-4xl flex items-center justify-center gap-4 text-3xl font-black transition-all duration-75 touch-manipulation ${
               isPlaying 
                 ? 'bg-red-500/10 text-red-500 border-2 border-red-500/50 shadow-[inset_0_0_20px_rgba(239,68,68,0.2)]' 
                 : 'bg-emerald-500 text-neutral-950 border-2 border-emerald-400 hover:bg-emerald-400 shadow-[0_10px_30px_rgba(16,185,129,0.3)] active:scale-[0.98]'
