@@ -48,7 +48,6 @@ export default function MetronomeUI() {
       setVisualSub(sub);
     };
 
-    // HACK: Global Audio Unlocker untuk Browser HP (iOS/Android)
     const unlockAudio = () => {
       if (engineRef.current) engineRef.current.unlock();
       document.removeEventListener('touchstart', unlockAudio);
@@ -74,9 +73,7 @@ export default function MetronomeUI() {
   
   const togglePlay = () => { 
     if (!engineRef.current) return; 
-    // Paksa unlock lagi tepat saat play ditekan sebagai pengaman ganda
     engineRef.current.unlock();
-    
     if (isPlaying) { 
       engineRef.current.stop(); 
       setIsPlaying(false); 
@@ -148,18 +145,17 @@ export default function MetronomeUI() {
   const confirmDeleteTrack = async () => { if (!currentTrack || !activeSetlist) return; setIsDeletingTrack(true); try { await deleteTrack(currentTrack.id, activeSetlist.id); const updated = await getMySetlists(); const active = updated.find((s: any) => s.id === activeSetlist.id); if (active) { setActiveSetlist(active); if (active.tracks.length === 0) setCurrentTrackIndex(0); else { const newIndex = Math.min(currentTrackIndex, active.tracks.length - 1); setCurrentTrackIndex(newIndex); setBpm(active.tracks[newIndex].bpm); setTimeSignature(active.tracks[newIndex].timeSignature || 4); setSubdivision(active.tracks[newIndex].subdivision || 1); } } } catch (err) { console.error(err); } finally { setIsDeletingTrack(false); setIsDeleteTrackModalOpen(false); } };
 
   return (
-    // FIX LAYOUT: Menggunakan "fixed inset-0" untuk memaku aplikasi ke seluruh layar HP secara paksa, tak bisa discroll.
-    <div className="fixed inset-0 sm:relative sm:inset-auto flex flex-col w-full h-[100dvh] sm:h-auto sm:min-h-[650px] max-w-md mx-auto bg-neutral-900 sm:rounded-3xl shadow-2xl sm:border border-neutral-800 overflow-hidden pt-12 pb-3 px-4 sm:px-6">
+    // PADDING KIRI KANAN DIPERKECIL (px-3) AGAR TOMBOL BISA MAKSIMAL
+    <div className="fixed inset-0 sm:relative sm:inset-auto flex flex-col w-full h-[100dvh] sm:h-auto sm:min-h-[650px] max-w-md mx-auto bg-neutral-900 sm:rounded-3xl shadow-2xl sm:border border-neutral-800 overflow-hidden pt-12 pb-3 px-3 sm:px-6">
       
       {session && (
-        <div className="absolute top-3 left-4 z-10">
-          {/* MENGGUNAKAN onClick AGAR LEBIH RAMAH BROWSER HP */}
+        <div className="absolute top-3 left-3 z-10">
           <button onClick={() => setIsSetlistOpen(true)} className="p-2.5 text-neutral-400 hover:text-emerald-400 bg-neutral-800/80 hover:bg-neutral-800 rounded-full border border-neutral-700 backdrop-blur-md transition-colors shadow-lg touch-manipulation">
             <ListMusic size={20} />
           </button>
         </div>
       )}
-      <div className="absolute top-3 right-4 flex items-center gap-3 z-10">
+      <div className="absolute top-3 right-3 flex items-center gap-3 z-10">
         {session ? (
           <div className="flex items-center gap-2 bg-neutral-800/90 py-1.5 px-2 rounded-full border border-neutral-700 shadow-lg backdrop-blur-md">
             <img src={session.user?.image || ""} alt="Profile" className="w-6 h-6 rounded-full" referrerPolicy="no-referrer" />
@@ -171,7 +167,7 @@ export default function MetronomeUI() {
         )}
       </div>
 
-      <div className="flex flex-col w-full h-full flex-1 justify-between gap-1.5 sm:gap-2">
+      <div className="flex flex-col w-full h-full flex-1 justify-between gap-1.5">
         
         {activeSetlist && (
           <div className="w-full bg-neutral-800/40 border border-neutral-700/50 rounded-2xl p-2 flex flex-col gap-1.5 animate-in fade-in duration-200 shrink-0">
@@ -182,16 +178,11 @@ export default function MetronomeUI() {
                   {isDraftMode ? "[ Ketuk simpan ]" : currentTrack?.title}
                 </span>
               </div>
-              <button onClick={() => setActiveSetlist(null)} className="text-neutral-500 hover:text-red-400 text-[10px] font-bold bg-neutral-800/80 px-2 py-1.5 rounded-lg transition-colors touch-manipulation">
-                EXIT
-              </button>
+              <button onClick={() => setActiveSetlist(null)} className="text-neutral-500 hover:text-red-400 text-[10px] font-bold bg-neutral-800/80 px-2 py-1.5 rounded-lg transition-colors touch-manipulation">EXIT</button>
             </div>
-
             <div className="flex gap-2">
               {isDraftMode ? (
-                <button onClick={() => setIsSaveModalOpen(true)} className="flex-1 py-1.5 bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 rounded-lg text-xs font-bold flex items-center justify-center gap-1 touch-manipulation">
-                  <Save size={14} /> Simpan Lagu Baru
-                </button>
+                <button onClick={() => setIsSaveModalOpen(true)} className="flex-1 py-1.5 bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 rounded-lg text-xs font-bold flex items-center justify-center gap-1 touch-manipulation"><Save size={14} /> Simpan Lagu Baru</button>
               ) : (
                 <>
                   <div className="flex-1 flex gap-2">
@@ -201,26 +192,23 @@ export default function MetronomeUI() {
                       </button>
                     ) : (
                       activeSetlist.tracks?.length < 15 && (
-                        <button onClick={() => { setCurrentTrackIndex(activeSetlist.tracks.length); setBpm(120); setTimeSignature(4); setSubdivision(1); }} className="flex-1 py-1.5 bg-neutral-800 border border-neutral-700 rounded-lg text-neutral-300 text-xs font-medium flex items-center justify-center gap-1 touch-manipulation">
-                          <PlusCircle size={14} /> Tambah Lagu
-                        </button>
+                        <button onClick={() => { setCurrentTrackIndex(activeSetlist.tracks.length); setBpm(120); setTimeSignature(4); setSubdivision(1); }} className="flex-1 py-1.5 bg-neutral-800 border border-neutral-700 rounded-lg text-neutral-300 text-xs font-medium flex items-center justify-center gap-1 touch-manipulation"><PlusCircle size={14} /> Tambah Lagu</button>
                       )
                     )}
                   </div>
-                  <button onClick={() => setIsDeleteTrackModalOpen(true)} className="py-1.5 px-3 bg-red-500/10 text-red-500 border border-red-500/30 rounded-lg flex justify-center touch-manipulation">
-                    <Trash2 size={14} />
-                  </button>
+                  <button onClick={() => setIsDeleteTrackModalOpen(true)} className="py-1.5 px-3 bg-red-500/10 text-red-500 border border-red-500/30 rounded-lg flex justify-center touch-manipulation"><Trash2 size={14} /></button>
                 </>
               )}
             </div>
           </div>
         )}
 
-        <div className="flex items-center justify-between w-full flex-1 min-h-0 py-1">
-          <button onClick={goPrev} disabled={!activeSetlist || isDraftMode || activeSetlist.tracks?.length <= 1} className={`w-14 h-28 sm:h-36 shrink-0 flex items-center justify-center rounded-2xl transition-all touch-manipulation ${activeSetlist && !isDraftMode && activeSetlist.tracks?.length > 1 ? 'bg-neutral-800 hover:bg-neutral-700 text-white active:scale-95 shadow-md border border-neutral-700' : 'bg-transparent text-neutral-800 opacity-50'}`}><ChevronLeft size={40} /></button>
+        <div className="flex items-center justify-between w-full flex-1 min-h-[140px] py-1">
+          {/* TOMBOL PANAH KEMBALI BESAR (w-16 h-36, icon 48px) */}
+          <button onClick={goPrev} disabled={!activeSetlist || isDraftMode || activeSetlist.tracks?.length <= 1} className={`w-16 h-36 shrink-0 flex items-center justify-center rounded-2xl transition-all touch-manipulation ${activeSetlist && !isDraftMode && activeSetlist.tracks?.length > 1 ? 'bg-neutral-800 hover:bg-neutral-700 text-white active:scale-95 shadow-md border border-neutral-700' : 'bg-transparent text-neutral-800 opacity-50'}`}><ChevronLeft size={48} /></button>
           
           <div className="text-center flex-1 flex flex-col items-center justify-center mx-1">
-            <div className="flex justify-center items-center gap-1 w-full mb-1 min-h-[28px]">
+            <div className="flex justify-center items-center gap-1 w-full mb-1 h-[32px]">
               {Array.from({ length: timeSignature }).map((_, i) => {
                 const beatNum = i + 1;
                 const isCurrentBeat = isPlaying && visualBeat === beatNum;
@@ -231,31 +219,35 @@ export default function MetronomeUI() {
                   else circleClass = 'bg-emerald-500/30 text-emerald-200 border-emerald-500/50 scale-105';
                 }
                 return (
-                  <div key={beatNum} className={`flex items-center justify-center w-5 h-5 sm:w-7 sm:h-7 rounded-full text-[9px] sm:text-xs font-bold transition-all duration-75 ${circleClass}`}>{beatNum}</div>
+                  // VISUAL CUES KEMBALI BESAR (w-7 h-7)
+                  <div key={beatNum} className={`flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold transition-all duration-75 ${circleClass}`}>{beatNum}</div>
                 );
               })}
             </div>
 
-            <div className="text-[4rem] sm:text-[5rem] leading-[1] font-black text-white tracking-tighter select-none">{bpm}</div>
+            {/* TEXT TEMPO KEMBALI RAKSASA (5rem) */}
+            <div className="text-[5rem] leading-[1] font-black text-white tracking-tighter select-none">{bpm}</div>
             
-            <button onPointerDown={handleTapTempo} className="mt-2 w-32 sm:w-40 py-2 sm:py-3 shrink-0 bg-neutral-800/90 hover:bg-neutral-700 text-emerald-500 border-2 border-neutral-700 rounded-3xl flex items-center justify-center gap-2 active:scale-95 transition-all touch-manipulation shadow-md">
-              <Hand size={16} /> <span className="text-xs sm:text-sm font-bold tracking-widest uppercase">TAP</span>
+            {/* TAP TEMPO KEMBALI BESAR (w-48, icon 20px) */}
+            <button onPointerDown={handleTapTempo} className="mt-3 w-48 py-4 shrink-0 bg-neutral-800/90 hover:bg-neutral-700 text-emerald-500 border-2 border-neutral-700 rounded-3xl flex items-center justify-center gap-2 active:scale-95 transition-all touch-manipulation shadow-md">
+              <Hand size={20} /> <span className="text-base font-bold tracking-widest uppercase">TAP</span>
             </button>
           </div>
 
-          <button onClick={goNext} disabled={!activeSetlist || isDraftMode || activeSetlist.tracks?.length <= 1} className={`w-14 h-28 sm:h-36 shrink-0 flex items-center justify-center rounded-2xl transition-all touch-manipulation ${activeSetlist && !isDraftMode && activeSetlist.tracks?.length > 1 ? 'bg-neutral-800 hover:bg-neutral-700 text-white active:scale-95 shadow-md border border-neutral-700' : 'bg-transparent text-neutral-800 opacity-50'}`}><ChevronRight size={40} /></button>
+          <button onClick={goNext} disabled={!activeSetlist || isDraftMode || activeSetlist.tracks?.length <= 1} className={`w-16 h-36 shrink-0 flex items-center justify-center rounded-2xl transition-all touch-manipulation ${activeSetlist && !isDraftMode && activeSetlist.tracks?.length > 1 ? 'bg-neutral-800 hover:bg-neutral-700 text-white active:scale-95 shadow-md border border-neutral-700' : 'bg-transparent text-neutral-800 opacity-50'}`}><ChevronRight size={48} /></button>
         </div>
 
-        <div className="flex flex-col gap-1.5 sm:gap-2 shrink-0">
-          <div className="flex items-center w-full gap-3">
-            <button onClick={() => adjustBpm(-1)} className="p-3 sm:p-4 bg-neutral-800 rounded-2xl hover:bg-neutral-700 text-white touch-manipulation shrink-0"><Minus size={22} /></button>
+        <div className="flex flex-col shrink-0">
+          {/* TOMBOL PLUS MINUS KEMBALI BESAR (p-4) */}
+          <div className="flex items-center w-full gap-3 mb-1.5">
+            <button onClick={() => adjustBpm(-1)} className="p-4 bg-neutral-800 rounded-2xl hover:bg-neutral-700 text-white touch-manipulation shrink-0"><Minus size={24} /></button>
             <input type="range" min="30" max="300" value={bpm} onChange={handleSliderChange} className="w-full h-3 bg-neutral-700 rounded-lg appearance-none cursor-pointer accent-emerald-500" />
-            <button onClick={() => adjustBpm(1)} className="p-3 sm:p-4 bg-neutral-800 rounded-2xl hover:bg-neutral-700 text-white touch-manipulation shrink-0"><Plus size={22} /></button>
+            <button onClick={() => adjustBpm(1)} className="p-4 bg-neutral-800 rounded-2xl hover:bg-neutral-700 text-white touch-manipulation shrink-0"><Plus size={24} /></button>
           </div>
 
-          <div className="flex w-full bg-neutral-800/60 p-1.5 rounded-2xl shadow-sm border border-neutral-700/50">
+          <div className="flex w-full bg-neutral-800/60 p-1.5 rounded-2xl shadow-sm border border-neutral-700/50 mb-1">
             {[3, 4, 6, 7, 8].map(ts => (
-              <button key={ts} onClick={() => setTimeSignature(ts)} className={`flex-1 py-1.5 sm:py-2 text-xs font-bold rounded-xl transition-all touch-manipulation ${timeSignature === ts ? 'bg-amber-500/10 text-amber-500 shadow-sm border border-amber-500/30' : 'text-neutral-400 hover:text-neutral-200 border border-transparent'}`}>
+              <button key={ts} onClick={() => setTimeSignature(ts)} className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all touch-manipulation ${timeSignature === ts ? 'bg-amber-500/10 text-amber-500 shadow-sm border border-amber-500/30' : 'text-neutral-400 hover:text-neutral-200 border border-transparent'}`}>
                 {ts}/4
               </button>
             ))}
@@ -263,22 +255,25 @@ export default function MetronomeUI() {
 
           <div className="flex w-full bg-neutral-800/80 p-1.5 rounded-2xl shadow-sm border border-neutral-700/50">
             {[ { label: '1/4', val: 1 }, { label: '1/8', val: 2 }, { label: 'Trip', val: 3 }, { label: '1/16', val: 4 } ].map(item => (
-              <button key={item.val} onClick={() => setSubdivision(item.val)} className={`flex-1 py-2 text-xs sm:text-sm font-bold rounded-xl transition-all touch-manipulation tracking-wider ${subdivision === item.val ? 'bg-emerald-500/10 text-emerald-500 shadow-sm border border-emerald-500/30' : 'text-neutral-400 hover:text-neutral-200 border border-transparent'}`}>
+              <button key={item.val} onClick={() => setSubdivision(item.val)} className={`flex-1 py-3 text-sm font-bold rounded-xl transition-all touch-manipulation tracking-wider ${subdivision === item.val ? 'bg-emerald-500/10 text-emerald-500 shadow-sm border border-emerald-500/30' : 'text-neutral-400 hover:text-neutral-200 border border-transparent'}`}>
                 {item.label}
               </button>
             ))}
           </div>
 
-          <div className="flex flex-col w-full gap-1.5 sm:gap-2">
-            <button onClick={togglePlay} className={`w-full py-4 sm:py-6 rounded-[2rem] flex items-center justify-center gap-3 sm:gap-4 text-2xl sm:text-3xl font-black transition-all duration-75 touch-manipulation shrink-0 ${isPlaying ? 'bg-red-500/10 text-red-500 border-2 border-red-500/50 shadow-[inset_0_0_20px_rgba(239,68,68,0.2)]' : 'bg-emerald-500 text-neutral-950 border-2 border-emerald-400 hover:bg-emerald-400 shadow-[0_10px_30px_rgba(16,185,129,0.3)] active:scale-[0.98]'}`}>
-              {isPlaying ? <><Square size={28} fill="currentColor" /> STOP</> : <><Play size={28} fill="currentColor" /> PLAY</>}
+          {/* PERHATIKAN INI: mt-5 DITAMBAHKAN UNTUK MENJAUHKAN TOMBOL PLAY DARI PENGATURAN DI ATASNYA */}
+          <div className="flex flex-col w-full gap-2 mt-5">
+            {/* TOMBOL PLAY KEMBALI RAKSASA (py-8, text-3xl) */}
+            <button onClick={togglePlay} className={`w-full py-7 sm:py-8 rounded-[2rem] flex items-center justify-center gap-4 text-3xl font-black transition-all duration-75 touch-manipulation shrink-0 ${isPlaying ? 'bg-red-500/10 text-red-500 border-2 border-red-500/50 shadow-[inset_0_0_20px_rgba(239,68,68,0.2)]' : 'bg-emerald-500 text-neutral-950 border-2 border-emerald-400 hover:bg-emerald-400 shadow-[0_10px_30px_rgba(16,185,129,0.3)] active:scale-[0.98]'}`}>
+              {isPlaying ? <><Square size={32} fill="currentColor" /> STOP</> : <><Play size={32} fill="currentColor" /> PLAY</>}
             </button>
-            <div className="flex w-full gap-2 sm:gap-3">
-              <button onClick={handleSync} disabled={!isPlaying} className={`flex-1 py-3 sm:py-4 rounded-2xl flex items-center justify-center gap-2 text-base sm:text-lg font-bold border-2 transition-all touch-manipulation shrink-0 ${isPlaying ? 'bg-blue-500/10 text-blue-500 border-blue-500/50 active:bg-blue-500/30' : 'bg-neutral-900 text-neutral-700 border-neutral-800'}`}>
-                <RefreshCw size={20} strokeWidth={3} className={isPlaying ? "active:rotate-180 transition-transform" : ""} /> SYNC
+            <div className="flex w-full gap-3">
+              {/* TOMBOL SYNC & MUTE KEMBALI BESAR (py-4/py-5) */}
+              <button onClick={handleSync} disabled={!isPlaying} className={`flex-1 py-4 sm:py-5 rounded-2xl flex items-center justify-center gap-2 text-lg font-bold border-2 transition-all touch-manipulation shrink-0 ${isPlaying ? 'bg-blue-500/10 text-blue-500 border-blue-500/50 active:bg-blue-500/30' : 'bg-neutral-900 text-neutral-700 border-neutral-800'}`}>
+                <RefreshCw size={22} strokeWidth={3} className={isPlaying ? "active:rotate-180 transition-transform" : ""} /> SYNC
               </button>
-              <button onClick={toggleMute} className={`flex-1 py-3 sm:py-4 rounded-2xl flex items-center justify-center gap-2 text-base sm:text-lg font-bold border-2 transition-all touch-manipulation shrink-0 ${isMuted ? 'bg-amber-500/10 text-amber-500 border-amber-500/50' : 'bg-neutral-800 text-neutral-400 border-neutral-700 hover:bg-neutral-700'}`}>
-                {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />} {isMuted ? 'MUTED' : 'MUTE'}
+              <button onClick={toggleMute} className={`flex-1 py-4 sm:py-5 rounded-2xl flex items-center justify-center gap-2 text-lg font-bold border-2 transition-all touch-manipulation shrink-0 ${isMuted ? 'bg-amber-500/10 text-amber-500 border-amber-500/50' : 'bg-neutral-800 text-neutral-400 border-neutral-700 hover:bg-neutral-700'}`}>
+                {isMuted ? <VolumeX size={22} /> : <Volume2 size={22} />} {isMuted ? 'MUTED' : 'MUTE'}
               </button>
             </div>
           </div>
