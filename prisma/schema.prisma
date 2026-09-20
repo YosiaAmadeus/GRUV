@@ -80,12 +80,16 @@ model Setlist {
 }
 
 model Track {
-  id        String   @id @default(cuid())
-  title     String
-  bpm       Int
-  order     Int      
-  setlistId String
-  setlist   Setlist  @relation(fields: [setlistId], references: [id], onDelete: Cascade)
-
-  @@index([setlistId])
+  id            String   @id @default(cuid())
+  title         String
+  bpm           Int
+  timeSignature Int      @default(4)
+  subdivision   Int      @default(1)
+  order         Int      @default(0)
+  
+  setlistId     String
+  setlist       Setlist  @relation(fields: [setlistId], references: [id], onDelete: Cascade)
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
