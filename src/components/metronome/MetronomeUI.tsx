@@ -303,24 +303,34 @@ export default function MetronomeUI() {
           <div className="flex items-center justify-between w-full mb-4">
             <button onClick={goPrev} disabled={!activeSetlist || isDraftMode || activeSetlist.tracks?.length <= 1} className={`w-14 h-28 sm:w-20 sm:h-36 shrink-0 flex items-center justify-center rounded-2xl transition-all touch-manipulation ${activeSetlist && !isDraftMode && activeSetlist.tracks?.length > 1 ? 'bg-neutral-800 hover:bg-neutral-700 text-white active:scale-95 shadow-md border border-neutral-700' : 'bg-transparent text-neutral-800 opacity-50'}`}><ChevronLeft size={48} /></button>
             
-            <div className="text-center flex-1 flex flex-col items-center justify-center mx-2 w-full overflow-hidden">
+            <div className="text-center flex-1 flex flex-col items-center justify-center mx-2 w-full">
               
-              {/* LINGKARAN VISUAL CUES EKSTRA JUMBO DINAMIS */}
-              {/* Menggunakan flex-1 dan aspect-square agar ukurannya otomatis membesar mentok layar */}
-              <div className="flex justify-center items-center gap-1.5 w-full mb-2 px-1">
+{/* LINGKARAN VISUAL CUES EKSTRA JUMBO DINAMIS & RESPONSIF */}
+              <div className={`flex justify-center items-center w-full mb-2 px-1 py-2 ${timeSignature >= 7 ? 'gap-1' : 'gap-1.5'}`}>
                 {Array.from({ length: timeSignature }).map((_, i) => {
                   const beatNum = i + 1;
                   const isCurrentBeat = isPlaying && visualBeat === beatNum;
                   const isMain = isCurrentBeat && visualSub === 0;
+                  
                   let circleClass = 'bg-neutral-800 text-neutral-600 border border-neutral-700/50'; 
                   if (isCurrentBeat) {
                     if (isMain) circleClass = beatNum === 1 ? 'bg-amber-500 text-amber-950 scale-110 shadow-[0_0_20px_rgba(245,158,11,0.6)]' : 'bg-emerald-500 text-emerald-950 scale-110 shadow-[0_0_20px_rgba(16,185,129,0.6)]'; 
                     else circleClass = 'bg-emerald-500/30 text-emerald-200 border-emerald-500/50 scale-105';
                   }
+
+                  // LOGIKA RESPONSIF: Mengecilkan teks dan batas maksimal jika ketukan banyak
+                  let sizeClass = 'text-xl sm:text-3xl max-w-[60px] sm:max-w-[80px]'; // Normal (3/4, 4/4)
+                  if (timeSignature >= 7) {
+                    sizeClass = 'text-sm sm:text-xl max-w-[40px] sm:max-w-[55px]'; // Rapat (7/4, 8/4)
+                  } else if (timeSignature >= 5) {
+                    sizeClass = 'text-base sm:text-2xl max-w-[50px] sm:max-w-[65px]'; // Sedang (5/4, 6/4)
+                  }
+
                   return (
                     <div 
                       key={beatNum} 
-                      className={`flex items-center justify-center flex-1 max-w-[60px] sm:max-w-[80px] aspect-square rounded-full text-xl sm:text-3xl font-black transition-all duration-75 ${circleClass}`}
+                      // Tambahkan 'leading-none' di sini agar teks tidak membuat lingkaran jadi lonjong
+                      className={`flex items-center justify-center flex-1 aspect-square rounded-full font-black leading-none transition-all duration-75 ${sizeClass} ${circleClass}`}
                     >
                       {beatNum}
                     </div>
