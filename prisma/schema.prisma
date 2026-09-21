@@ -85,6 +85,7 @@ model Track {
   bpm           Int
   timeSignature Int      @default(4)
   subdivision   Int      @default(1)
+  countIn       Boolean  @default(false)
   order         Int      @default(0)
   
   setlistId     String

@@ -53,7 +53,7 @@ export async function deleteSetlist(id: string) {
 }
 
 // FUNGSI BARU: Tambah lagu beserta setting metronom-nya
-export async function addTrack(setlistId: string, title: string, bpm: number, timeSignature: number = 4, subdivision: number = 1) {
+export async function addTrack(setlistId: string, title: string, bpm: number, timeSignature: number = 4, subdivision: number = 1, countIn: boolean = false) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) throw new Error("Belum login!");
 
@@ -72,14 +72,14 @@ export async function addTrack(setlistId: string, title: string, bpm: number, ti
   const newOrder = lastTrack ? lastTrack.order + 1 : 0;
 
   await prisma.track.create({
-    data: { title, bpm, timeSignature, subdivision, order: newOrder, setlistId }
+    data: { title, bpm, timeSignature, subdivision, order: newOrder, setlistId, countIn }
   });
 
   revalidatePath("/");
 }
 
 // FUNGSI BARU: Update BPM, Time Signature, & Subdivisi
-export async function updateTrackSettings(trackId: string, bpm: number, timeSignature: number, subdivision: number) {
+export async function updateTrackSettings(trackId: string, bpm: number, timeSignature: number, subdivision: number, countIn: boolean = false) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) throw new Error("Belum login!");
 
@@ -88,7 +88,7 @@ export async function updateTrackSettings(trackId: string, bpm: number, timeSign
 
   await prisma.track.update({
     where: { id: trackId },
-    data: { bpm, timeSignature, subdivision }
+    data: { bpm, timeSignature, subdivision, countIn }
   });
 
   revalidatePath("/");
@@ -107,6 +107,22 @@ export async function deleteTrack(trackId: string, setlistId: string) {
   if (!setlist) throw new Error("Akses ditolak");
 
   await prisma.track.delete({ where: { id: trackId } });
+
+  revalidatePath("/");
+}
+
+// FUNGSI BARU: Update Judul Lagu
+export async function updateTrackTitle(trackId: string, title: string) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.email) throw new Error("Belum login!");
+
+  const user = await prisma.user.findUnique({ where: { email: session.user.email } });
+  if (!user) throw new Error("User tidak ditemukan");
+
+  await prisma.track.update({
+    where: { id: trackId },
+    data: { title }
+  });
 
   revalidatePath("/");
 }
