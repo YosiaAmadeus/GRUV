@@ -8,10 +8,9 @@ import SetlistPanel from "./SetlistPanel";
 import { addTrack, getMySetlists, updateTrackSettings, deleteTrack } from "@/actions/setlist";
 
 export default function MetronomeUI() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const [isSetlistOpen, setIsSetlistOpen] = useState(false);
   
-  // STATE KEMBALI MENGGUNAKAN isEngineReady UNTUK LAYAR PEMANCING
   const [isEngineReady, setIsEngineReady] = useState(false);
   
   const [bpm, setBpm] = useState(120);
@@ -50,9 +49,20 @@ export default function MetronomeUI() {
       setVisualBeat(beat);
       setVisualSub(sub);
     };
+
+    const unlockAudio = () => {
+      if (engineRef.current) engineRef.current.unlock();
+      document.removeEventListener('touchstart', unlockAudio);
+      document.removeEventListener('click', unlockAudio);
+    };
+    document.addEventListener('touchstart', unlockAudio, { once: true });
+    document.addEventListener('click', unlockAudio, { once: true });
+
     return () => {
       engineRef.current?.stop();
       releaseWakeLock();
+      document.removeEventListener('touchstart', unlockAudio);
+      document.removeEventListener('click', unlockAudio);
     };
   }, []);
 
@@ -63,16 +73,16 @@ export default function MetronomeUI() {
   const requestWakeLock = async () => { try { if ('wakeLock' in navigator) wakeLockRef.current = await navigator.wakeLock.request('screen'); } catch (err) {} };
   const releaseWakeLock = async () => { if (wakeLockRef.current !== null) { await wakeLockRef.current.release(); wakeLockRef.current = null; } };
   
-  // FUNGSI UNTUK TOMBOL PEMANCING
   const handlePowerOn = () => {
     if (engineRef.current) {
-      engineRef.current.unlock(); // Chip audio dipanaskan di sini
+      engineRef.current.unlock(); 
     }
     setIsEngineReady(true);
   };
 
   const togglePlay = () => { 
     if (!engineRef.current) return; 
+    engineRef.current.unlock();
     if (isPlaying) { 
       engineRef.current.stop(); 
       setIsPlaying(false); 
@@ -90,6 +100,7 @@ export default function MetronomeUI() {
   const adjustBpm = (amount: number) => setBpm((prev) => Math.min(Math.max(prev + amount, 30), 300));
 
   const handleTapTempo = () => {
+    if (engineRef.current) engineRef.current.unlock();
     const now = performance.now();
     let newTimes = [...tapTimes, now];
     if (tapTimes.length > 0 && now - tapTimes[tapTimes.length - 1] > 2000) newTimes = [now]; 
@@ -111,44 +122,51 @@ export default function MetronomeUI() {
   const handleSaveNewTrack = async (e: React.FormEvent) => { e.preventDefault(); if (!activeSetlist || !newTrackTitle.trim()) return; setIsProcessing(true); try { await addTrack(activeSetlist.id, newTrackTitle, bpm, timeSignature, subdivision); const updated = await getMySetlists(); const active = updated.find((s: any) => s.id === activeSetlist.id); if (active) { setActiveSetlist(active); setCurrentTrackIndex(active.tracks.length - 1); } setIsSaveModalOpen(false); setNewTrackTitle(""); } catch (err) { console.error(err); } finally { setIsProcessing(false); } };
   const confirmDeleteTrack = async () => { if (!currentTrack || !activeSetlist) return; setIsDeletingTrack(true); try { await deleteTrack(currentTrack.id, activeSetlist.id); const updated = await getMySetlists(); const active = updated.find((s: any) => s.id === activeSetlist.id); if (active) { setActiveSetlist(active); if (active.tracks.length === 0) setCurrentTrackIndex(0); else { const newIndex = Math.min(currentTrackIndex, active.tracks.length - 1); setCurrentTrackIndex(newIndex); setBpm(active.tracks[newIndex].bpm); setTimeSignature(active.tracks[newIndex].timeSignature || 4); setSubdivision(active.tracks[newIndex].subdivision || 1); } } } catch (err) { console.error(err); } finally { setIsDeletingTrack(false); setIsDeleteTrackModalOpen(false); } };
 
-  // LAYAR PEMANCING YANG DESAINNYA LEBIH PROFESIONAL
+  if (status === "loading") {
+    return (
+      <div className="fixed inset-0 sm:relative flex flex-col w-full h-[100dvh] sm:h-auto sm:min-h-[700px] max-w-md mx-auto bg-neutral-900 sm:rounded-3xl shadow-2xl sm:border border-neutral-800 items-center justify-center">
+        <Loader2 size={32} className="text-emerald-500 animate-spin" />
+      </div>
+    );
+  }
+
   if (!isEngineReady) {
     return (
-      <div className="fixed inset-0 sm:relative flex flex-col w-full h-[100dvh] sm:h-auto sm:min-h-[650px] max-w-md mx-auto bg-neutral-900 sm:rounded-3xl shadow-2xl sm:border border-neutral-800 overflow-hidden items-center justify-center p-6">
-        <div className="text-center space-y-8 flex flex-col items-center">
+      <div className="fixed inset-0 sm:relative flex flex-col w-full h-[100dvh] sm:h-auto sm:min-h-[700px] max-w-md mx-auto bg-neutral-900 sm:rounded-3xl shadow-2xl sm:border border-neutral-800 overflow-hidden items-center justify-center p-6">
+        <div className="text-center space-y-6 flex flex-col items-center">
+          <div className="w-12 h-1.5 bg-emerald-500 rounded-full mb-2"></div>
+          <h1 className="text-4xl font-black text-white tracking-tight leading-tight">
+            Gruv <br />
+            <span className="text-emerald-500 text-3xl font-bold tracking-widest uppercase">Stage Engine</span>
+          </h1>
+          <p className="text-neutral-400 text-sm px-4 max-w-[280px] leading-relaxed mb-6">
+            Menyiapkan modul audio bebas latensi untuk performa maksimal.
+          </p>
+          
           <button 
             onClick={handlePowerOn} 
-            className="w-32 h-32 bg-neutral-800 border-2 border-emerald-500/50 rounded-full flex flex-col items-center justify-center text-emerald-500 shadow-[0_0_30px_rgba(16,185,129,0.2)] hover:bg-emerald-500 hover:text-neutral-900 transition-all active:scale-95 group"
+            className="group flex flex-col items-center justify-center gap-3 w-32 h-32 bg-neutral-800 border-2 border-emerald-500/50 rounded-full text-emerald-500 shadow-[0_0_30px_rgba(16,185,129,0.15)] hover:bg-emerald-500 hover:text-neutral-900 hover:shadow-[0_0_40px_rgba(16,185,129,0.4)] active:scale-95 transition-all"
           >
-            <Power size={48} className="mb-2 group-hover:scale-110 transition-transform" />
-            <span className="font-black tracking-widest text-xs uppercase">Power On</span>
+            <Power size={40} className="group-hover:scale-110 transition-transform" />
+            <span className="font-black tracking-widest text-[10px] uppercase">Power On</span>
           </button>
-          
-          <div className="space-y-2">
-            <h2 className="text-xl font-bold text-white tracking-widest uppercase flex items-center justify-center gap-2">
-              <Activity size={20} className="text-emerald-500" />
-              Audio Engine
-            </h2>
-            <p className="text-neutral-400 text-xs px-4 max-w-[250px]">
-              Menghidupkan modul WebAudio untuk performa bebas latensi (0ms).
-            </p>
-          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="fixed inset-0 sm:relative sm:inset-auto flex flex-col w-full h-[100dvh] sm:h-auto sm:min-h-[700px] max-w-md mx-auto bg-neutral-900 sm:rounded-3xl shadow-2xl sm:border border-neutral-800 overflow-hidden pt-12 pb-4 px-3 sm:px-6">
+    // DI SINI PERUBAHANNYA: pt-12 diubah menjadi pt-20 (Padding Top diperbesar)
+    <div className="fixed inset-0 sm:relative sm:inset-auto flex flex-col w-full h-[100dvh] sm:h-auto sm:min-h-[700px] max-w-md mx-auto bg-neutral-900 sm:rounded-3xl shadow-2xl sm:border border-neutral-800 overflow-hidden pt-20 pb-4 px-3 sm:px-6">
       
       {session && (
-        <div className="absolute top-3 left-3 z-10">
+        <div className="absolute top-4 left-4 z-10">
           <button onClick={() => setIsSetlistOpen(true)} className="p-2.5 text-neutral-400 hover:text-emerald-400 bg-neutral-800/80 hover:bg-neutral-800 rounded-full border border-neutral-700 backdrop-blur-md transition-colors shadow-lg touch-manipulation">
             <ListMusic size={20} />
           </button>
         </div>
       )}
-      <div className="absolute top-3 right-3 flex items-center gap-3 z-10">
+      <div className="absolute top-4 right-4 flex items-center gap-3 z-10">
         {session ? (
           <div className="flex items-center gap-2 bg-neutral-800/90 py-1.5 px-2 rounded-full border border-neutral-700 shadow-lg backdrop-blur-md">
             <img src={session.user?.image || ""} alt="Profile" className="w-6 h-6 rounded-full" referrerPolicy="no-referrer" />
@@ -195,7 +213,7 @@ export default function MetronomeUI() {
           </div>
         )}
 
-        {/* AREA TENGAH: TEMPO DAN SETTINGS (DIANGKAT KE ATAS) */}
+        {/* AREA TENGAH: TEMPO DAN SETTINGS */}
         <div className="flex flex-col w-full flex-1 justify-center min-h-0 py-1">
           
           <div className="flex items-center justify-between w-full mb-2">
@@ -251,8 +269,7 @@ export default function MetronomeUI() {
           </div>
         </div>
 
-        {/* AREA BAWAH: TOMBOL EKSEKUSI RAKSASA (Dengan Jarak Aman) */}
-        {/* margin-top (mt-6) ini yang menjauhkan tombol dari pengaturan di atasnya! */}
+        {/* AREA BAWAH: TOMBOL EKSEKUSI RAKSASA */}
         <div className="flex flex-col w-full gap-2 mt-6 sm:mt-10 shrink-0 mb-1">
           <button onClick={togglePlay} className={`w-full py-8 sm:py-10 rounded-[2rem] flex items-center justify-center gap-4 text-4xl sm:text-4xl font-black transition-all duration-75 touch-manipulation shrink-0 ${isPlaying ? 'bg-red-500/10 text-red-500 border-2 border-red-500/50 shadow-[inset_0_0_20px_rgba(239,68,68,0.2)]' : 'bg-emerald-500 text-neutral-950 border-2 border-emerald-400 hover:bg-emerald-400 shadow-[0_10px_30px_rgba(16,185,129,0.3)] active:scale-[0.98]'}`}>
             {isPlaying ? <><Square size={36} fill="currentColor" /> STOP</> : <><Play size={36} fill="currentColor" /> PLAY</>}
@@ -268,7 +285,6 @@ export default function MetronomeUI() {
         </div>
       </div>
       
-      {/* Modal disembunyikan dalam code-snippet untuk menghemat layar */}
       <SetlistPanel isOpen={isSetlistOpen} onClose={() => setIsSetlistOpen(false)} onSelectSetlist={handleSelectSetlist} />
 
       {/* Modal Simpan */}
