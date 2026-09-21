@@ -167,20 +167,24 @@ export class MetronomeEngine {
     if (!this.audioContext || this.isMuted) return;
     
     if (this.vocalBuffers[vocalKey]) {
-      // Play file vocal asli jika ada
       const source = this.audioContext.createBufferSource();
       source.buffer = this.vocalBuffers[vocalKey];
-      source.connect(this.audioContext.destination);
+      
+      // GAIN NODE BARU UNTUK MEM-BOOST SUARA FILE ASLI (2.5x LIPAT)
+      const boostGain = this.audioContext.createGain();
+      boostGain.gain.value = 2.5; 
+      
+      source.connect(boostGain).connect(this.audioContext.destination);
       source.start(time);
     } else {
-      // Sintesis Suara Guide Tone sebagai fallback
       const osc = this.audioContext.createOscillator();
       const gain = this.audioContext.createGain();
       
       osc.type = isFirstBar ? 'square' : 'triangle';
       osc.frequency.setValueAtTime(vocalKey === 'intro' || vocalKey === '1' ? 600 : 400, time);
       
-      gain.gain.setValueAtTime(0.5, time);
+      // BOOST SYNTH CUE DARI 0.5 MENJADI 1.5
+      gain.gain.setValueAtTime(1.5, time);
       gain.gain.exponentialRampToValueAtTime(0.001, time + 0.1);
       
       osc.connect(gain).connect(this.audioContext.destination);
@@ -215,7 +219,7 @@ export class MetronomeEngine {
     }
   }
 
-  // --- SINTESIS 5 INSTRUMEN TANPA LATENSI ---
+// --- SINTESIS 5 INSTRUMEN TANPA LATENSI (BOOSTED VOLUME) ---
   private playSoundKit(time: number, isMain: boolean, isFirst: boolean) {
     if (!this.audioContext) return;
 
@@ -227,7 +231,7 @@ export class MetronomeEngine {
       case 'woodblock':
         osc.type = 'triangle';
         osc.frequency.setValueAtTime(isFirst ? 1200 : (isMain ? 800 : 600), time);
-        gain.gain.setValueAtTime(isFirst ? 1 : (isMain ? 0.6 : 0.3), time); // Aksen keras di beat 1
+        gain.gain.setValueAtTime(isFirst ? 2.5 : (isMain ? 1.5 : 0.8), time); // BOOST
         gain.gain.exponentialRampToValueAtTime(0.001, time + 0.05);
         osc.connect(gain).connect(ctx.destination);
         osc.start(time);
@@ -242,8 +246,7 @@ export class MetronomeEngine {
           filter.type = 'highpass';
           filter.frequency.value = isFirst ? 5000 : 7000; 
           
-          gain.gain.setValueAtTime(isFirst ? 0.8 : (isMain ? 0.3 : 0.1), time);
-          // Beat 1 = Open Hihat (desis panjang), Lainnya = Closed (pendek)
+          gain.gain.setValueAtTime(isFirst ? 2.5 : (isMain ? 1.0 : 0.4), time); // BOOST
           gain.gain.exponentialRampToValueAtTime(0.001, time + (isFirst ? 0.25 : 0.05));
           
           noise.connect(filter).connect(gain).connect(ctx.destination);
@@ -261,8 +264,7 @@ export class MetronomeEngine {
           filter.frequency.value = isFirst ? 3000 : 4000;
           
           gain.gain.setValueAtTime(0.01, time);
-          // Beat 1 ayunan sangat kuat, sisanya pelan
-          gain.gain.linearRampToValueAtTime(isFirst ? 0.8 : (isMain ? 0.2 : 0.05), time + 0.02);
+          gain.gain.linearRampToValueAtTime(isFirst ? 2.5 : (isMain ? 0.8 : 0.2), time + 0.02); // BOOST
           gain.gain.exponentialRampToValueAtTime(0.001, time + (isFirst ? 0.2 : 0.08));
           
           noise.connect(filter).connect(gain).connect(ctx.destination);
@@ -272,11 +274,10 @@ export class MetronomeEngine {
         break;
 
       case 'techno':
-        // DIBUAT PERSIS SEPERTI SUARA CUE (BEEP RETRO)
-        osc.type = isFirst ? 'square' : 'triangle'; // Beat 1 kotak tegas, sisanya segitiga halus
+        osc.type = isFirst ? 'square' : 'triangle';
         osc.frequency.setValueAtTime(isFirst ? 600 : (isMain ? 400 : 300), time);
         
-        gain.gain.setValueAtTime(isFirst ? 0.6 : (isMain ? 0.4 : 0.2), time);
+        gain.gain.setValueAtTime(isFirst ? 2.0 : (isMain ? 1.2 : 0.6), time); // BOOST
         gain.gain.exponentialRampToValueAtTime(0.001, time + 0.1);
         
         osc.connect(gain).connect(ctx.destination);
@@ -287,7 +288,7 @@ export class MetronomeEngine {
       default: // 'digital'
         osc.type = 'sine';
         osc.frequency.setValueAtTime(isFirst ? 1000 : (isMain ? 800 : 400), time);
-        gain.gain.setValueAtTime(isFirst ? 1 : (isMain ? 0.5 : 0.2), time); // Aksen beat 1
+        gain.gain.setValueAtTime(isFirst ? 2.5 : (isMain ? 1.5 : 0.8), time); // BOOST
         gain.gain.exponentialRampToValueAtTime(0.001, time + 0.1);
         osc.connect(gain).connect(ctx.destination);
         osc.start(time);
