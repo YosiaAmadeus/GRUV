@@ -1,5 +1,6 @@
 export class MetronomeEngine {
   public audioContext: AudioContext | null = null;
+  private masterCompressor: DynamicsCompressorNode | null = null;
   private nextNoteTime: number = 0;
   private timerID: number | null = null;
   
@@ -27,8 +28,19 @@ export class MetronomeEngine {
     if (typeof window !== 'undefined') {
       const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
       this.audioContext = new AudioContextClass();
+      
+      // SETUP COMPRESSOR
+      this.masterCompressor = this.audioContext.createDynamicsCompressor();
+      this.masterCompressor.threshold.setValueAtTime(-5, this.audioContext.currentTime); // Mulai nahan lebih awal agar tidak sakit di telinga
+      this.masterCompressor.knee.setValueAtTime(12, this.audioContext.currentTime); // Lekukan transisi yang sangat halus
+      this.masterCompressor.ratio.setValueAtTime(20, this.audioContext.currentTime); // Tahan sekuat tembok bata
+      this.masterCompressor.attack.setValueAtTime(0.001, this.audioContext.currentTime); // Tangkap sangat cepat
+      this.masterCompressor.release.setValueAtTime(0.05, this.audioContext.currentTime); // Lepas cepat agar memantul
+      
+      this.masterCompressor.connect(this.audioContext.destination);
+
       this.createNoiseBuffer();
-      this.loadVocalSamples(); // Coba muat suara manusia jika ada
+      this.loadVocalSamples();
     }
   }
 
@@ -64,7 +76,9 @@ export class MetronomeEngine {
     if (this.audioContext && this.audioContext.state === 'suspended') {
       this.audioContext.resume();
       const osc = this.audioContext.createOscillator();
-      osc.connect(this.audioContext.destination);
+      // Lewatkan unlock ke compressor juga
+      if (this.masterCompressor) osc.connect(this.masterCompressor); 
+      else osc.connect(this.audioContext.destination);
       osc.start();
       osc.stop();
     }
@@ -116,7 +130,6 @@ export class MetronomeEngine {
 
   private scheduler() {
     while (this.audioContext && this.nextNoteTime < this.audioContext.currentTime + 0.1) {
-      
       if (this.isCountingIn) {
         this.scheduleCountInBeat();
       } else {
@@ -164,17 +177,17 @@ export class MetronomeEngine {
   }
 
   private playVocalCount(time: number, vocalKey: string, isFirstBar: boolean) {
-    if (!this.audioContext || this.isMuted) return;
+    if (!this.audioContext || this.isMuted || !this.masterCompressor) return;
     
     if (this.vocalBuffers[vocalKey]) {
       const source = this.audioContext.createBufferSource();
       source.buffer = this.vocalBuffers[vocalKey];
       
-      // GAIN NODE BARU UNTUK MEM-BOOST SUARA FILE ASLI (2.5x LIPAT)
       const boostGain = this.audioContext.createGain();
       boostGain.gain.value = 5.0; 
       
-      source.connect(boostGain).connect(this.audioContext.destination);
+      // DIUBAH: Nyambung ke masterCompressor, bukan destination
+      source.connect(boostGain).connect(this.masterCompressor);
       source.start(time);
     } else {
       const osc = this.audioContext.createOscillator();
@@ -183,11 +196,11 @@ export class MetronomeEngine {
       osc.type = isFirstBar ? 'square' : 'triangle';
       osc.frequency.setValueAtTime(vocalKey === 'intro' || vocalKey === '1' ? 600 : 400, time);
       
-      // BOOST SYNTH CUE DARI 0.5 MENJADI 1.5
       gain.gain.setValueAtTime(3.0, time);
       gain.gain.exponentialRampToValueAtTime(0.001, time + 0.1);
       
-      osc.connect(gain).connect(this.audioContext.destination);
+      // DIUBAH: Nyambung ke masterCompressor, bukan destination
+      osc.connect(gain).connect(this.masterCompressor);
       osc.start(time);
       osc.stop(time + 0.1);
     }
@@ -219,9 +232,9 @@ export class MetronomeEngine {
     }
   }
 
-// --- SINTESIS 5 INSTRUMEN TANPA LATENSI (BOOSTED VOLUME) ---
+  // --- SINTESIS 5 INSTRUMEN TANPA LATENSI (BOOSTED VOLUME + COMPRESSOR) ---
   private playSoundKit(time: number, isMain: boolean, isFirst: boolean) {
-    if (!this.audioContext) return;
+    if (!this.audioContext || !this.masterCompressor) return;
 
     const ctx = this.audioContext;
     const osc = ctx.createOscillator();
@@ -231,9 +244,10 @@ export class MetronomeEngine {
       case 'woodblock':
         osc.type = 'triangle';
         osc.frequency.setValueAtTime(isFirst ? 1200 : (isMain ? 800 : 600), time);
-        gain.gain.setValueAtTime(isFirst ? 5.0 : (isMain ? 3.0 : 1.5), time); // BOOST
+        gain.gain.setValueAtTime(isFirst ? 5.0 : (isMain ? 3.0 : 1.5), time);
         gain.gain.exponentialRampToValueAtTime(0.001, time + 0.05);
-        osc.connect(gain).connect(ctx.destination);
+        // DIUBAH: Nyambung ke masterCompressor
+        osc.connect(gain).connect(this.masterCompressor);
         osc.start(time);
         osc.stop(time + 0.05);
         break;
@@ -246,10 +260,11 @@ export class MetronomeEngine {
           filter.type = 'highpass';
           filter.frequency.value = isFirst ? 5000 : 7000; 
           
-          gain.gain.setValueAtTime(isFirst ? 5.0 : (isMain ? 2.5 : 1.0), time); // BOOST
+          gain.gain.setValueAtTime(isFirst ? 5.0 : (isMain ? 2.5 : 1.0), time);
           gain.gain.exponentialRampToValueAtTime(0.001, time + (isFirst ? 0.25 : 0.05));
           
-          noise.connect(filter).connect(gain).connect(ctx.destination);
+          // DIUBAH: Nyambung ke masterCompressor
+          noise.connect(filter).connect(gain).connect(this.masterCompressor);
           noise.start(time);
           noise.stop(time + 0.3);
         }
@@ -264,10 +279,11 @@ export class MetronomeEngine {
           filter.frequency.value = isFirst ? 3000 : 4000;
           
           gain.gain.setValueAtTime(0.01, time);
-          gain.gain.linearRampToValueAtTime(isFirst ? 5.0 : (isMain ? 2.0 : 0.8), time + 0.02); // BOOST
+          gain.gain.linearRampToValueAtTime(isFirst ? 5.0 : (isMain ? 2.0 : 0.8), time + 0.02);
           gain.gain.exponentialRampToValueAtTime(0.001, time + (isFirst ? 0.2 : 0.08));
           
-          noise.connect(filter).connect(gain).connect(ctx.destination);
+          // DIUBAH: Nyambung ke masterCompressor
+          noise.connect(filter).connect(gain).connect(this.masterCompressor);
           noise.start(time);
           noise.stop(time + 0.25);
         }
@@ -277,10 +293,11 @@ export class MetronomeEngine {
         osc.type = isFirst ? 'square' : 'triangle';
         osc.frequency.setValueAtTime(isFirst ? 600 : (isMain ? 400 : 300), time);
         
-        gain.gain.setValueAtTime(isFirst ? 4.0 : (isMain ? 2.5 : 1.2), time); // BOOST
+        gain.gain.setValueAtTime(isFirst ? 4.0 : (isMain ? 2.5 : 1.2), time);
         gain.gain.exponentialRampToValueAtTime(0.001, time + 0.1);
         
-        osc.connect(gain).connect(ctx.destination);
+        // DIUBAH: Nyambung ke masterCompressor
+        osc.connect(gain).connect(this.masterCompressor);
         osc.start(time);
         osc.stop(time + 0.1);
         break;
@@ -288,9 +305,11 @@ export class MetronomeEngine {
       default: // 'digital'
         osc.type = 'sine';
         osc.frequency.setValueAtTime(isFirst ? 1000 : (isMain ? 800 : 400), time);
-        gain.gain.setValueAtTime(isFirst ? 5.0 : (isMain ? 3.0 : 1.5), time); // BOOST
+        gain.gain.setValueAtTime(isFirst ? 5.0 : (isMain ? 3.0 : 1.5), time);
         gain.gain.exponentialRampToValueAtTime(0.001, time + 0.1);
-        osc.connect(gain).connect(ctx.destination);
+        
+        // DIUBAH: Nyambung ke masterCompressor
+        osc.connect(gain).connect(this.masterCompressor);
         osc.start(time);
         osc.stop(time + 0.1);
         break;
