@@ -297,26 +297,38 @@ export default function MetronomeUI() {
           </div>
         )}
 
+        {/* AREA TENGAH */}
         <div className="flex flex-col w-full flex-1 justify-center min-h-0 py-1 mt-2">
-          <div className="flex items-center justify-between w-full mb-3">
-            <button onClick={goPrev} disabled={!activeSetlist || isDraftMode || activeSetlist.tracks?.length <= 1} className={`w-16 h-32 sm:w-20 sm:h-36 shrink-0 flex items-center justify-center rounded-2xl transition-all touch-manipulation ${activeSetlist && !isDraftMode && activeSetlist.tracks?.length > 1 ? 'bg-neutral-800 hover:bg-neutral-700 text-white active:scale-95 shadow-md border border-neutral-700' : 'bg-transparent text-neutral-800 opacity-50'}`}><ChevronLeft size={48} /></button>
+          
+          <div className="flex items-center justify-between w-full mb-4">
+            <button onClick={goPrev} disabled={!activeSetlist || isDraftMode || activeSetlist.tracks?.length <= 1} className={`w-14 h-28 sm:w-20 sm:h-36 shrink-0 flex items-center justify-center rounded-2xl transition-all touch-manipulation ${activeSetlist && !isDraftMode && activeSetlist.tracks?.length > 1 ? 'bg-neutral-800 hover:bg-neutral-700 text-white active:scale-95 shadow-md border border-neutral-700' : 'bg-transparent text-neutral-800 opacity-50'}`}><ChevronLeft size={48} /></button>
             
-            <div className="text-center flex-1 flex flex-col items-center justify-center mx-1">
-              <div className="flex justify-center items-center gap-1.5 w-full h-[40px] sm:h-[48px] mb-2">
+            <div className="text-center flex-1 flex flex-col items-center justify-center mx-2 w-full overflow-hidden">
+              
+              {/* LINGKARAN VISUAL CUES EKSTRA JUMBO DINAMIS */}
+              {/* Menggunakan flex-1 dan aspect-square agar ukurannya otomatis membesar mentok layar */}
+              <div className="flex justify-center items-center gap-1.5 w-full mb-2 px-1">
                 {Array.from({ length: timeSignature }).map((_, i) => {
                   const beatNum = i + 1;
                   const isCurrentBeat = isPlaying && visualBeat === beatNum;
                   const isMain = isCurrentBeat && visualSub === 0;
                   let circleClass = 'bg-neutral-800 text-neutral-600 border border-neutral-700/50'; 
                   if (isCurrentBeat) {
-                    if (isMain) circleClass = beatNum === 1 ? 'bg-amber-500 text-amber-950 scale-110 shadow-[0_0_12px_rgba(245,158,11,0.5)]' : 'bg-emerald-500 text-emerald-950 scale-110 shadow-[0_0_12px_rgba(16,185,129,0.5)]'; 
+                    if (isMain) circleClass = beatNum === 1 ? 'bg-amber-500 text-amber-950 scale-110 shadow-[0_0_20px_rgba(245,158,11,0.6)]' : 'bg-emerald-500 text-emerald-950 scale-110 shadow-[0_0_20px_rgba(16,185,129,0.6)]'; 
                     else circleClass = 'bg-emerald-500/30 text-emerald-200 border-emerald-500/50 scale-105';
                   }
-                  return <div key={beatNum} className={`flex items-center justify-center w-5 h-5 sm:w-7 sm:h-7 rounded-full text-[9px] sm:text-xs font-bold transition-all duration-75 ${circleClass}`}>{beatNum}</div>;
+                  return (
+                    <div 
+                      key={beatNum} 
+                      className={`flex items-center justify-center flex-1 max-w-[60px] sm:max-w-[80px] aspect-square rounded-full text-xl sm:text-3xl font-black transition-all duration-75 ${circleClass}`}
+                    >
+                      {beatNum}
+                    </div>
+                  );
                 })}
               </div>
 
-              <div className={`text-[4rem] sm:text-[5rem] leading-[1] font-black tracking-tighter select-none transition-colors ${countInText ? 'text-amber-500' : 'text-white'}`}>
+              <div className={`text-[4.5rem] sm:text-[6rem] leading-[1] font-black tracking-tighter select-none transition-colors ${countInText ? 'text-amber-500' : 'text-white'}`}>
                 {countInText ? countInText : bpm}
               </div>
               
@@ -324,11 +336,13 @@ export default function MetronomeUI() {
                 <Hand size={16} /> <span className="text-xs sm:text-sm font-bold tracking-widest uppercase">TAP</span>
               </button>
             </div>
-            <button onClick={goNext} disabled={!activeSetlist || isDraftMode || activeSetlist.tracks?.length <= 1} className={`w-16 h-32 sm:w-20 sm:h-36 shrink-0 flex items-center justify-center rounded-2xl transition-all touch-manipulation ${activeSetlist && !isDraftMode && activeSetlist.tracks?.length > 1 ? 'bg-neutral-800 hover:bg-neutral-700 text-white active:scale-95 shadow-md border border-neutral-700' : 'bg-transparent text-neutral-800 opacity-50'}`}><ChevronRight size={48} /></button>
+            
+            <button onClick={goNext} disabled={!activeSetlist || isDraftMode || activeSetlist.tracks?.length <= 1} className={`w-14 h-28 sm:w-20 sm:h-36 shrink-0 flex items-center justify-center rounded-2xl transition-all touch-manipulation ${activeSetlist && !isDraftMode && activeSetlist.tracks?.length > 1 ? 'bg-neutral-800 hover:bg-neutral-700 text-white active:scale-95 shadow-md border border-neutral-700' : 'bg-transparent text-neutral-800 opacity-50'}`}><ChevronRight size={48} /></button>
           </div>
 
           <div className="flex gap-2 w-full mb-1">
-            <div className="flex flex-1 bg-neutral-800/80 p-1 rounded-xl shadow-sm border border-neutral-700/50 overflow-x-auto hide-scrollbar">
+            {/* SOUND KITS DIMATIKAN SAAT PLAYING */}
+            <div className={`flex flex-1 bg-neutral-800/80 p-1 rounded-xl shadow-sm border border-neutral-700/50 overflow-x-auto hide-scrollbar ${isPlaying ? 'opacity-50 grayscale pointer-events-none' : ''}`}>
               {[ 
                 { id: 'digital', label: 'DIGI' },
                 { id: 'woodblock', label: 'WOOD' },
@@ -339,8 +353,8 @@ export default function MetronomeUI() {
                 <button 
                   key={sound.id} 
                   onClick={() => setSoundType(sound.id as any)} 
+                  disabled={isPlaying}
                   className={`flex-1 min-w-[42px] py-2 text-[10px] font-bold tracking-widest rounded-lg transition-all touch-manipulation ${soundType === sound.id ? 'bg-emerald-500/20 text-emerald-500 shadow-sm border border-emerald-500/30 scale-105' : 'text-neutral-400 border border-transparent opacity-60 hover:opacity-100'}`}
-                  title={sound.id}
                 >
                   {sound.label}
                 </button>
@@ -357,29 +371,41 @@ export default function MetronomeUI() {
             </button>
           </div>
 
-          <div className="flex items-center w-full gap-3 mb-3 mt-2">
+          <div className="flex items-center w-full gap-3 mb-1">
             <button onClick={() => adjustBpm(-1)} className="p-3 sm:p-4 bg-neutral-800 rounded-2xl hover:bg-neutral-700 text-white touch-manipulation shrink-0"><Minus size={22} /></button>
             <input type="range" min="30" max="300" value={bpm} onChange={handleSliderChange} className="w-full h-3 bg-neutral-700 rounded-lg appearance-none cursor-pointer accent-emerald-500" />
             <button onClick={() => adjustBpm(1)} className="p-3 sm:p-4 bg-neutral-800 rounded-2xl hover:bg-neutral-700 text-white touch-manipulation shrink-0"><Plus size={22} /></button>
           </div>
 
+          {/* TIME SIGNATURE DIMATIKAN SAAT PLAYING */}
           <div className="flex w-full bg-neutral-800/60 p-1 rounded-2xl shadow-sm border border-neutral-700/50 mb-1">
             {[3, 4, 6, 7, 8].map(ts => (
-              <button key={ts} onClick={() => setTimeSignature(ts)} className={`flex-1 py-1 sm:py-2 text-xs font-bold rounded-xl transition-all touch-manipulation ${timeSignature === ts ? 'bg-amber-500/10 text-amber-500 shadow-sm border border-amber-500/30' : 'text-neutral-400 hover:text-neutral-200 border border-transparent'}`}>
+              <button 
+                key={ts} 
+                onClick={() => setTimeSignature(ts)} 
+                disabled={isPlaying}
+                className={`flex-1 py-1 sm:py-2 text-xs font-bold rounded-xl transition-all touch-manipulation ${isPlaying ? 'opacity-50 grayscale cursor-not-allowed' : ''} ${timeSignature === ts ? 'bg-amber-500/10 text-amber-500 shadow-sm border border-amber-500/30' : 'text-neutral-400 hover:text-neutral-200 border border-transparent'}`}
+              >
                 {ts}/4
               </button>
             ))}
           </div>
 
-          <div className="flex w-full bg-neutral-800/80 p-1 rounded-2xl shadow-sm border border-neutral-700/50 mt-1">
-            {[ { label: '1/4', val: 1 }, { label: '1/8', val: 2 }, { label: 'Triplet', val: 3 }, { label: '1/16', val: 4 } ].map(item => (
-              <button key={item.val} onClick={() => setSubdivision(item.val)} className={`flex-1 py-1.5 sm:py-3 text-xs sm:text-sm font-bold rounded-xl transition-all touch-manipulation tracking-wider ${subdivision === item.val ? 'bg-emerald-500/10 text-emerald-500 shadow-sm border border-emerald-500/30' : 'text-neutral-400 hover:text-neutral-200 border border-transparent'}`}>
+          {/* SUBDIVISION DIMATIKAN SAAT PLAYING */}
+          <div className="flex w-full bg-neutral-800/80 p-1 rounded-2xl shadow-sm border border-neutral-700/50">
+            {[ { label: '1/4', val: 1 }, { label: '1/8', val: 2 }, { label: 'Trip', val: 3 }, { label: '1/16', val: 4 } ].map(item => (
+              <button 
+                key={item.val} 
+                onClick={() => setSubdivision(item.val)} 
+                disabled={isPlaying}
+                className={`flex-1 py-1.5 sm:py-3 text-xs sm:text-sm font-bold rounded-xl transition-all touch-manipulation tracking-wider ${isPlaying ? 'opacity-50 grayscale cursor-not-allowed' : ''} ${subdivision === item.val ? 'bg-emerald-500/10 text-emerald-500 shadow-sm border border-emerald-500/30' : 'text-neutral-400 hover:text-neutral-200 border border-transparent'}`}
+              >
                 {item.label}
               </button>
             ))}
           </div>
         </div>
-
+        
         <div className="flex flex-col w-full gap-2 mt-4 sm:mt-8 shrink-0 mb-1">
           <button onClick={togglePlay} className={`w-full h-32 sm:h-36 rounded-[2rem] flex items-center justify-center gap-4 text-4xl sm:text-4xl font-black transition-all duration-75 touch-manipulation shrink-0 ${isPlaying ? 'bg-red-500/10 text-red-500 border-2 border-red-500/50 shadow-[inset_0_0_20px_rgba(239,68,68,0.2)]' : 'bg-emerald-500 text-neutral-950 border-2 border-emerald-400 hover:bg-emerald-400 shadow-[0_10px_30px_rgba(16,185,129,0.3)] active:scale-[0.98]'}`}>
             {isPlaying ? <><Square size={36} fill="currentColor" /> STOP</> : <><Play size={36} fill="currentColor" /> PLAY</>}
