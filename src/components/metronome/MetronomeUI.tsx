@@ -342,7 +342,7 @@ export default function MetronomeUI() {
                 {countInText ? countInText : bpm}
               </div>
               
-              <button onPointerDown={handleTapTempo} className="mt-1 w-32 sm:w-40 py-2 sm:py-3 shrink-0 bg-neutral-800/90 hover:bg-neutral-700 text-emerald-500 border-2 border-neutral-700 rounded-3xl flex items-center justify-center gap-2 active:scale-95 transition-all touch-manipulation shadow-md">
+              <button onPointerDown={handleTapTempo} disabled={isPlaying} className="mt-1 w-32 sm:w-40 py-2 sm:py-3 shrink-0 bg-neutral-800/90 hover:bg-neutral-700 text-emerald-500 border-2 border-neutral-700 rounded-3xl flex items-center justify-center gap-2 active:scale-95 transition-all touch-manipulation shadow-md">
                 <Hand size={16} /> <span className="text-xs sm:text-sm font-bold tracking-widest uppercase">TAP</span>
               </button>
             </div>

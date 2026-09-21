@@ -176,7 +176,7 @@ export class MetronomeEngine {
     }
   }
 
-  private playVocalCount(time: number, vocalKey: string, isFirstBar: boolean) {
+private playVocalCount(time: number, vocalKey: string, isFirstBar: boolean) {
     if (!this.audioContext || this.isMuted || !this.masterCompressor) return;
     
     if (this.vocalBuffers[vocalKey]) {
@@ -184,22 +184,31 @@ export class MetronomeEngine {
       source.buffer = this.vocalBuffers[vocalKey];
       
       const boostGain = this.audioContext.createGain();
+      // VOLUME RATA 5.0 untuk rekaman vokal manusia
       boostGain.gain.value = 5.0; 
       
-      // DIUBAH: Nyambung ke masterCompressor, bukan destination
       source.connect(boostGain).connect(this.masterCompressor);
       source.start(time);
     } else {
       const osc = this.audioContext.createOscillator();
       const gain = this.audioContext.createGain();
       
-      osc.type = isFirstBar ? 'square' : 'triangle';
-      osc.frequency.setValueAtTime(vocalKey === 'intro' || vocalKey === '1' ? 600 : 400, time);
+      // PERBAIKAN: Gunakan gelombang 'square' untuk semua bar agar volumenya RATA
+      osc.type = 'square'; 
       
-      gain.gain.setValueAtTime(3.0, time);
+      // Bedakan dari Pitchnya saja
+      if (vocalKey === 'intro') {
+        osc.frequency.setValueAtTime(900, time); // Nada tertinggi
+      } else if (isFirstBar) {
+        osc.frequency.setValueAtTime(600, time); // Nada sedang
+      } else {
+        osc.frequency.setValueAtTime(500, time); // Nada rendah (Bar 2)
+      }
+      
+      // VOLUME RATA 5.0
+      gain.gain.setValueAtTime(5.0, time);
       gain.gain.exponentialRampToValueAtTime(0.001, time + 0.1);
       
-      // DIUBAH: Nyambung ke masterCompressor, bukan destination
       osc.connect(gain).connect(this.masterCompressor);
       osc.start(time);
       osc.stop(time + 0.1);
@@ -232,7 +241,8 @@ export class MetronomeEngine {
     }
   }
 
-  // --- SINTESIS 5 INSTRUMEN TANPA LATENSI (BOOSTED VOLUME + COMPRESSOR) ---
+  // --- SINTESIS 5 INSTRUMEN TANPA LATENSI (VOLUME RATA, AKSEN NADA) ---
+// --- SINTESIS 5 INSTRUMEN TANPA LATENSI (VOLUME RATA, TIMBRE BERBEDA) ---
   private playSoundKit(time: number, isMain: boolean, isFirst: boolean) {
     if (!this.audioContext || !this.masterCompressor) return;
 
@@ -242,14 +252,26 @@ export class MetronomeEngine {
     
     switch (this.soundType) {
       case 'woodblock':
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(isFirst ? 1200 : (isMain ? 800 : 600), time);
-        gain.gain.setValueAtTime(isFirst ? 5.0 : (isMain ? 3.0 : 1.5), time);
-        gain.gain.exponentialRampToValueAtTime(0.001, time + 0.05);
-        // DIUBAH: Nyambung ke masterCompressor
-        osc.connect(gain).connect(this.masterCompressor);
+        // Desain Baru: Tegas, Jelas, dan "Kopong" (Hollow) ala Clave/Woodblock Asli
+        osc.type = 'square';
+        
+        // Filter Bandpass untuk membuang karakter "elektronik/robot" 
+        // dan menonjolkan frekuensi resonansi kayu
+        const woodFilter = ctx.createBiquadFilter();
+        woodFilter.type = 'bandpass';
+        woodFilter.Q.value = 2.5; // Membuat suaranya terpusat dan membulat
+        woodFilter.frequency.setValueAtTime(isFirst ? 1500 : 1000, time); // Pitch yang tegas
+        
+        osc.frequency.setValueAtTime(isFirst ? 1500 : 1000, time);
+        
+        // Volume maksimal yang tajam
+        gain.gain.setValueAtTime(isMain ? 6.0 : 2.5, time);
+        gain.gain.exponentialRampToValueAtTime(0.001, time + 0.04); // Durasi sangat pendek agar perkusif
+        
+        // Sambungkan melalui filter sebelum masuk ke gain dan compressor
+        osc.connect(woodFilter).connect(gain).connect(this.masterCompressor);
         osc.start(time);
-        osc.stop(time + 0.05);
+        osc.stop(time + 0.04);
         break;
 
       case 'hihat':
@@ -260,10 +282,9 @@ export class MetronomeEngine {
           filter.type = 'highpass';
           filter.frequency.value = isFirst ? 5000 : 7000; 
           
-          gain.gain.setValueAtTime(isFirst ? 5.0 : (isMain ? 2.5 : 1.0), time);
+          gain.gain.setValueAtTime(isMain ? 5.0 : 2.0, time);
           gain.gain.exponentialRampToValueAtTime(0.001, time + (isFirst ? 0.25 : 0.05));
           
-          // DIUBAH: Nyambung ke masterCompressor
           noise.connect(filter).connect(gain).connect(this.masterCompressor);
           noise.start(time);
           noise.stop(time + 0.3);
@@ -279,10 +300,9 @@ export class MetronomeEngine {
           filter.frequency.value = isFirst ? 3000 : 4000;
           
           gain.gain.setValueAtTime(0.01, time);
-          gain.gain.linearRampToValueAtTime(isFirst ? 5.0 : (isMain ? 2.0 : 0.8), time + 0.02);
+          gain.gain.linearRampToValueAtTime(isMain ? 5.0 : 2.0, time + 0.02);
           gain.gain.exponentialRampToValueAtTime(0.001, time + (isFirst ? 0.2 : 0.08));
           
-          // DIUBAH: Nyambung ke masterCompressor
           noise.connect(filter).connect(gain).connect(this.masterCompressor);
           noise.start(time);
           noise.stop(time + 0.25);
@@ -291,12 +311,11 @@ export class MetronomeEngine {
 
       case 'techno':
         osc.type = isFirst ? 'square' : 'triangle';
-        osc.frequency.setValueAtTime(isFirst ? 600 : (isMain ? 400 : 300), time);
+        osc.frequency.setValueAtTime(isFirst ? 800 : (isMain ? 300 : 200), time);
         
-        gain.gain.setValueAtTime(isFirst ? 4.0 : (isMain ? 2.5 : 1.2), time);
+        gain.gain.setValueAtTime(isMain ? 5.0 : 2.0, time);
         gain.gain.exponentialRampToValueAtTime(0.001, time + 0.1);
         
-        // DIUBAH: Nyambung ke masterCompressor
         osc.connect(gain).connect(this.masterCompressor);
         osc.start(time);
         osc.stop(time + 0.1);
@@ -304,14 +323,16 @@ export class MetronomeEngine {
 
       default: // 'digital'
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(isFirst ? 1000 : (isMain ? 800 : 400), time);
-        gain.gain.setValueAtTime(isFirst ? 5.0 : (isMain ? 3.0 : 1.5), time);
-        gain.gain.exponentialRampToValueAtTime(0.001, time + 0.1);
+        // PERBAIKAN: Frekuensi dinaikkan drastis ala Metronom Digital (2000/1000Hz)
+        osc.frequency.setValueAtTime(isFirst ? 2000 : 1000, time);
         
-        // DIUBAH: Nyambung ke masterCompressor
+        gain.gain.setValueAtTime(isMain ? 5.0 : 2.0, time);
+        // Durasi lebih panjang (0.08) dari woodblock (0.02)
+        gain.gain.exponentialRampToValueAtTime(0.001, time + 0.08);
+        
         osc.connect(gain).connect(this.masterCompressor);
         osc.start(time);
-        osc.stop(time + 0.1);
+        osc.stop(time + 0.08);
         break;
     }
   }
