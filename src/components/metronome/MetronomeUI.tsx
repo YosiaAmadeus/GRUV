@@ -299,10 +299,10 @@ export default function MetronomeUI() {
 
         <div className="flex flex-col w-full flex-1 justify-center min-h-0 py-1 mt-2">
           <div className="flex items-center justify-between w-full mb-3">
-            <button onClick={goPrev} disabled={!activeSetlist || isDraftMode || activeSetlist.tracks?.length <= 1} className={`w-12 h-24 sm:w-16 sm:h-32 shrink-0 flex items-center justify-center rounded-2xl transition-all touch-manipulation ${activeSetlist && !isDraftMode && activeSetlist.tracks?.length > 1 ? 'bg-neutral-800 hover:bg-neutral-700 text-white active:scale-95 shadow-md border border-neutral-700' : 'bg-transparent text-neutral-800 opacity-50'}`}><ChevronLeft size={52} /></button>
+            <button onClick={goPrev} disabled={!activeSetlist || isDraftMode || activeSetlist.tracks?.length <= 1} className={`w-16 h-32 sm:w-20 sm:h-36 shrink-0 flex items-center justify-center rounded-2xl transition-all touch-manipulation ${activeSetlist && !isDraftMode && activeSetlist.tracks?.length > 1 ? 'bg-neutral-800 hover:bg-neutral-700 text-white active:scale-95 shadow-md border border-neutral-700' : 'bg-transparent text-neutral-800 opacity-50'}`}><ChevronLeft size={48} /></button>
             
             <div className="text-center flex-1 flex flex-col items-center justify-center mx-1">
-              <div className="flex justify-center items-center gap-1.5 w-full h-[32px] sm:h-[40px] mb-2">
+              <div className="flex justify-center items-center gap-1.5 w-full h-[40px] sm:h-[48px] mb-2">
                 {Array.from({ length: timeSignature }).map((_, i) => {
                   const beatNum = i + 1;
                   const isCurrentBeat = isPlaying && visualBeat === beatNum;
@@ -324,7 +324,7 @@ export default function MetronomeUI() {
                 <Hand size={16} /> <span className="text-xs sm:text-sm font-bold tracking-widest uppercase">TAP</span>
               </button>
             </div>
-            <button onClick={goNext} disabled={!activeSetlist || isDraftMode || activeSetlist.tracks?.length <= 1} className={`w-12 h-24 sm:w-16 sm:h-32 shrink-0 flex items-center justify-center rounded-2xl transition-all touch-manipulation ${activeSetlist && !isDraftMode && activeSetlist.tracks?.length > 1 ? 'bg-neutral-800 hover:bg-neutral-700 text-white active:scale-95 shadow-md border border-neutral-700' : 'bg-transparent text-neutral-800 opacity-50'}`}><ChevronRight size={52} /></button>
+            <button onClick={goNext} disabled={!activeSetlist || isDraftMode || activeSetlist.tracks?.length <= 1} className={`w-16 h-32 sm:w-20 sm:h-36 shrink-0 flex items-center justify-center rounded-2xl transition-all touch-manipulation ${activeSetlist && !isDraftMode && activeSetlist.tracks?.length > 1 ? 'bg-neutral-800 hover:bg-neutral-700 text-white active:scale-95 shadow-md border border-neutral-700' : 'bg-transparent text-neutral-800 opacity-50'}`}><ChevronRight size={48} /></button>
           </div>
 
           <div className="flex gap-2 w-full mb-1">

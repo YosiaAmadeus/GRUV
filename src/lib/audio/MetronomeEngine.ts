@@ -172,7 +172,7 @@ export class MetronomeEngine {
       
       // GAIN NODE BARU UNTUK MEM-BOOST SUARA FILE ASLI (2.5x LIPAT)
       const boostGain = this.audioContext.createGain();
-      boostGain.gain.value = 2.5; 
+      boostGain.gain.value = 5.0; 
       
       source.connect(boostGain).connect(this.audioContext.destination);
       source.start(time);
@@ -184,7 +184,7 @@ export class MetronomeEngine {
       osc.frequency.setValueAtTime(vocalKey === 'intro' || vocalKey === '1' ? 600 : 400, time);
       
       // BOOST SYNTH CUE DARI 0.5 MENJADI 1.5
-      gain.gain.setValueAtTime(1.5, time);
+      gain.gain.setValueAtTime(3.0, time);
       gain.gain.exponentialRampToValueAtTime(0.001, time + 0.1);
       
       osc.connect(gain).connect(this.audioContext.destination);
@@ -231,7 +231,7 @@ export class MetronomeEngine {
       case 'woodblock':
         osc.type = 'triangle';
         osc.frequency.setValueAtTime(isFirst ? 1200 : (isMain ? 800 : 600), time);
-        gain.gain.setValueAtTime(isFirst ? 2.5 : (isMain ? 1.5 : 0.8), time); // BOOST
+        gain.gain.setValueAtTime(isFirst ? 5.0 : (isMain ? 3.0 : 1.5), time); // BOOST
         gain.gain.exponentialRampToValueAtTime(0.001, time + 0.05);
         osc.connect(gain).connect(ctx.destination);
         osc.start(time);
@@ -246,7 +246,7 @@ export class MetronomeEngine {
           filter.type = 'highpass';
           filter.frequency.value = isFirst ? 5000 : 7000; 
           
-          gain.gain.setValueAtTime(isFirst ? 2.5 : (isMain ? 1.0 : 0.4), time); // BOOST
+          gain.gain.setValueAtTime(isFirst ? 5.0 : (isMain ? 2.5 : 1.0), time); // BOOST
           gain.gain.exponentialRampToValueAtTime(0.001, time + (isFirst ? 0.25 : 0.05));
           
           noise.connect(filter).connect(gain).connect(ctx.destination);
@@ -264,7 +264,7 @@ export class MetronomeEngine {
           filter.frequency.value = isFirst ? 3000 : 4000;
           
           gain.gain.setValueAtTime(0.01, time);
-          gain.gain.linearRampToValueAtTime(isFirst ? 2.5 : (isMain ? 0.8 : 0.2), time + 0.02); // BOOST
+          gain.gain.linearRampToValueAtTime(isFirst ? 5.0 : (isMain ? 2.0 : 0.8), time + 0.02); // BOOST
           gain.gain.exponentialRampToValueAtTime(0.001, time + (isFirst ? 0.2 : 0.08));
           
           noise.connect(filter).connect(gain).connect(ctx.destination);
@@ -277,7 +277,7 @@ export class MetronomeEngine {
         osc.type = isFirst ? 'square' : 'triangle';
         osc.frequency.setValueAtTime(isFirst ? 600 : (isMain ? 400 : 300), time);
         
-        gain.gain.setValueAtTime(isFirst ? 2.0 : (isMain ? 1.2 : 0.6), time); // BOOST
+        gain.gain.setValueAtTime(isFirst ? 4.0 : (isMain ? 2.5 : 1.2), time); // BOOST
         gain.gain.exponentialRampToValueAtTime(0.001, time + 0.1);
         
         osc.connect(gain).connect(ctx.destination);
@@ -288,7 +288,7 @@ export class MetronomeEngine {
       default: // 'digital'
         osc.type = 'sine';
         osc.frequency.setValueAtTime(isFirst ? 1000 : (isMain ? 800 : 400), time);
-        gain.gain.setValueAtTime(isFirst ? 2.5 : (isMain ? 1.5 : 0.8), time); // BOOST
+        gain.gain.setValueAtTime(isFirst ? 5.0 : (isMain ? 3.0 : 1.5), time); // BOOST
         gain.gain.exponentialRampToValueAtTime(0.001, time + 0.1);
         osc.connect(gain).connect(ctx.destination);
         osc.start(time);
