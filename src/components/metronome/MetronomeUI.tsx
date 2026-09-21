@@ -271,16 +271,16 @@ export default function MetronomeUI() {
         {/* AREA BAWAH: MENGGUNAKAN TINGGI ABSOLUT (h-28/32 & h-20/24) */}
         <div className="flex flex-col w-full gap-2 mt-6 sm:mt-10 shrink-0 mb-1">
           {/* TOMBOL PLAY */}
-          <button onClick={togglePlay} className={`w-full h-28 sm:h-32 rounded-[2rem] flex items-center justify-center gap-4 text-4xl sm:text-4xl font-black transition-all duration-75 touch-manipulation shrink-0 ${isPlaying ? 'bg-red-500/10 text-red-500 border-2 border-red-500/50 shadow-[inset_0_0_20px_rgba(239,68,68,0.2)]' : 'bg-emerald-500 text-neutral-950 border-2 border-emerald-400 hover:bg-emerald-400 shadow-[0_10px_30px_rgba(16,185,129,0.3)] active:scale-[0.98]'}`}>
+          <button onClick={togglePlay} className={`w-full h-32 sm:h-36 rounded-[2rem] flex items-center justify-center gap-4 text-4xl sm:text-4xl font-black transition-all duration-75 touch-manipulation shrink-0 ${isPlaying ? 'bg-red-500/10 text-red-500 border-2 border-red-500/50 shadow-[inset_0_0_20px_rgba(239,68,68,0.2)]' : 'bg-emerald-500 text-neutral-950 border-2 border-emerald-400 hover:bg-emerald-400 shadow-[0_10px_30px_rgba(16,185,129,0.3)] active:scale-[0.98]'}`}>
             {isPlaying ? <><Square size={36} fill="currentColor" /> STOP</> : <><Play size={36} fill="currentColor" /> PLAY</>}
           </button>
           
           {/* TOMBOL SYNC & MUTE (Tepat 3/4 tinggi Play) */}
           <div className="flex w-full gap-2 sm:gap-3">
-            <button onClick={handleSync} disabled={!isPlaying} className={`flex-1 h-20 sm:h-24 rounded-2xl flex items-center justify-center gap-2 text-xl font-bold border-2 transition-all touch-manipulation shrink-0 ${isPlaying ? 'bg-blue-500/10 text-blue-500 border-blue-500/50 active:bg-blue-500/30' : 'bg-neutral-900 text-neutral-700 border-neutral-800'}`}>
+            <button onClick={handleSync} disabled={!isPlaying} className={`flex-1 h-24 sm:h-28 rounded-2xl flex items-center justify-center gap-2 text-xl font-bold border-2 transition-all touch-manipulation shrink-0 ${isPlaying ? 'bg-blue-500/10 text-blue-500 border-blue-500/50 active:bg-blue-500/30' : 'bg-neutral-900 text-neutral-700 border-neutral-800'}`}>
               <RefreshCw size={24} strokeWidth={3} className={isPlaying ? "active:rotate-180 transition-transform" : ""} /> SYNC
             </button>
-            <button onClick={toggleMute} className={`flex-1 h-20 sm:h-24 rounded-2xl flex items-center justify-center gap-2 text-xl font-bold border-2 transition-all touch-manipulation shrink-0 ${isMuted ? 'bg-amber-500/10 text-amber-500 border-amber-500/50' : 'bg-neutral-800 text-neutral-400 border-neutral-700 hover:bg-neutral-700'}`}>
+            <button onClick={toggleMute} className={`flex-1 h-24 sm:h-28 rounded-2xl flex items-center justify-center gap-2 text-xl font-bold border-2 transition-all touch-manipulation shrink-0 ${isMuted ? 'bg-amber-500/10 text-amber-500 border-amber-500/50' : 'bg-neutral-800 text-neutral-400 border-neutral-700 hover:bg-neutral-700'}`}>
               {isMuted ? <VolumeX size={24} /> : <Volume2 size={24} />} {isMuted ? 'MUTED' : 'MUTE'}
             </button>
           </div>
