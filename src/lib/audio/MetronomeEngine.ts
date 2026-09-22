@@ -138,63 +138,77 @@ export class MetronomeEngine {
     }
   }
 
-// --- LOGIKA HITUNGAN 2 BAR (COUNT-IN) DENGAN MAPPING EKSPLISIT ---
+// --- LOGIKA HITUNGAN 2 BAR (BAR 1: HALF TIME, BAR 2: FULL TIME) ---
   private scheduleCountInBeat() {
-    const totalCountBeats = this.beatsPerBar * 2; // Hitung total ketukan untuk 2 Bar
-    const barNumber = Math.floor(this.countInBeatIndex / this.beatsPerBar) + 1; // Mendeteksi kita sedang di Bar 1 atau 2
-    const beatInBar = (this.countInBeatIndex % this.beatsPerBar) + 1; // Ketukan ke-1, 2, 3, dst dalam satu Bar
+    const totalCountBeats = this.beatsPerBar * 2; 
+    const barNumber = Math.floor(this.countInBeatIndex / this.beatsPerBar) + 1; 
+    const beatInBar = (this.countInBeatIndex % this.beatsPerBar) + 1; 
     
     let vocalKey = '';
     let displayWord = '';
 
-    // RULE 1: Ketukan pertama di Bar ke-1 SELALU memanggil 'intro.wav'
-    if (barNumber === 1 && beatInBar === 1) {
-      vocalKey = 'intro';
-      displayWord = 'INTRO';
-    } 
-    // RULE 2: Mapping Ketukan Sisanya Berdasarkan Time Signature
-    else {
+    if (barNumber === 1) {
+      // RULE: BAR KE-1 (HALF-TIME LOGIC)
       switch (this.beatsPerBar) {
-        case 3:
-          // Hitungan 3/4 (Intro-2-3, 1-2-3)
-          vocalKey = beatInBar.toString(); // Memanggil '1', '2', '3'
-          break;
         case 4:
-          // Hitungan 4/4 (Intro-2-3-4, 1-2-3-4)
-          vocalKey = beatInBar.toString();
+          if (beatInBar === 1) { vocalKey = 'intro'; displayWord = 'INTRO'; }
+          else if (beatInBar === 3) { vocalKey = '2'; displayWord = '2'; }
+          else { displayWord = '•'; } // Titik visual untuk ketukan hening
+          break;
+        case 3:
+          // 3/4 tidak bisa dibagi dua, jadi cuma hitung di ketukan 1
+          if (beatInBar === 1) { vocalKey = 'intro'; displayWord = 'INTRO'; }
+          else { displayWord = '•'; }
           break;
         case 6:
-          // Hitungan 6/4 (Intro-2-3-4-5-6, 1-2-3-4-5-6)
-          vocalKey = beatInBar.toString();
+          // 6/4 dibagi 2 ayunan (1 dan 4)
+          if (beatInBar === 1) { vocalKey = 'intro'; displayWord = 'INTRO'; }
+          else if (beatInBar === 4) { vocalKey = '2'; displayWord = '2'; }
+          else { displayWord = '•'; }
           break;
         case 7:
-          // Hitungan 7/4 (Intro-2-3-4-5-6-7, 1-2-3-4-5-6-7)
-          vocalKey = beatInBar.toString();
+          // 7/4 pola umum 4+3 (Hitungan di 1 dan 5)
+          if (beatInBar === 1) { vocalKey = 'intro'; displayWord = 'INTRO'; }
+          else if (beatInBar === 5) { vocalKey = '2'; displayWord = '2'; }
+          else { displayWord = '•'; }
           break;
         case 8:
-          // Hitungan 8/4 (Intro-2-3-4-5-6-7-8, 1-2-3-4-5-6-7-8)
-          vocalKey = beatInBar.toString();
+          // 8/4 dibagi 4 ayunan (1, 3, 5, 7)
+          if (beatInBar === 1) { vocalKey = 'intro'; displayWord = 'INTRO'; }
+          else if (beatInBar === 3) { vocalKey = '2'; displayWord = '2'; }
+          else if (beatInBar === 5) { vocalKey = '3'; displayWord = '3'; }
+          else if (beatInBar === 7) { vocalKey = '4'; displayWord = '4'; }
+          else { displayWord = '•'; }
           break;
         default:
-          vocalKey = beatInBar.toString();
+          if (beatInBar === 1) { vocalKey = 'intro'; displayWord = 'INTRO'; }
+          else { displayWord = '•'; }
           break;
       }
-      displayWord = vocalKey; // Teks yang muncul besar di UI (Angka 1-8)
+    } 
+    else {
+      // RULE: BAR KE-2 (FULL-TIME LOGIC)
+      // Menghitung setiap ketukan dari 1 sampai habis (sesuai time signature)
+      vocalKey = beatInBar.toString(); 
+      displayWord = vocalKey;
     }
 
-    // Eksekusi Pemanggilan File Audio (.wav) dan Animasi UI
-    this.playVocalCount(this.nextNoteTime, vocalKey, barNumber === 1);
+    // Eksekusi Suara Vokal (Hanya dimainkan jika vocalKey memiliki nilai)
+    if (vocalKey !== '') {
+      this.playVocalCount(this.nextNoteTime, vocalKey, barNumber === 1);
+    }
     
+    // Update Visual di Layar (Titik hening '•' akan tetap di-render ke layar)
     if (this.onBeatVisual) {
       this.onBeatVisual(beatInBar, 0, true, displayWord);
     }
 
-    // Majukan waktu persis 1 ketuk penuh (mengabaikan subdivisi saat hitungan masuk)
+    // Majukan waktu persis 1 ketuk penuh
     const secondsPerBeat = 60.0 / this.bpm;
     this.nextNoteTime += secondsPerBeat;
     this.countInBeatIndex++;
 
-    // Cek apakah seluruh hitungan (2 Bar) sudah selesai, jika ya, masuk ke lagu asli!
+    // Jika seluruh hitungan (2 Bar) selesai, masuk ke lagu asli!
     if (this.countInBeatIndex >= totalCountBeats) {
       this.isCountingIn = false;
       this.currentBeat = 0;
