@@ -138,7 +138,7 @@ export class MetronomeEngine {
     }
   }
 
-// --- LOGIKA HITUNGAN 2 BAR (BAR 1: HALF TIME, BAR 2: FULL TIME) ---
+// --- LOGIKA HITUNGAN 2 BAR (VOKAL + CLICK SELALU BUNYI BERSAMAAN) ---
   private scheduleCountInBeat() {
     const totalCountBeats = this.beatsPerBar * 2; 
     const barNumber = Math.floor(this.countInBeatIndex / this.beatsPerBar) + 1; 
@@ -153,27 +153,23 @@ export class MetronomeEngine {
         case 4:
           if (beatInBar === 1) { vocalKey = 'intro'; displayWord = 'INTRO'; }
           else if (beatInBar === 3) { vocalKey = '2'; displayWord = '2'; }
-          else { displayWord = '•'; } // Titik visual untuk ketukan hening
+          else { displayWord = '•'; } 
           break;
         case 3:
-          // 3/4 tidak bisa dibagi dua, jadi cuma hitung di ketukan 1
           if (beatInBar === 1) { vocalKey = 'intro'; displayWord = 'INTRO'; }
           else { displayWord = '•'; }
           break;
         case 6:
-          // 6/4 dibagi 2 ayunan (1 dan 4)
           if (beatInBar === 1) { vocalKey = 'intro'; displayWord = 'INTRO'; }
           else if (beatInBar === 4) { vocalKey = '2'; displayWord = '2'; }
           else { displayWord = '•'; }
           break;
         case 7:
-          // 7/4 pola umum 4+3 (Hitungan di 1 dan 5)
           if (beatInBar === 1) { vocalKey = 'intro'; displayWord = 'INTRO'; }
           else if (beatInBar === 5) { vocalKey = '2'; displayWord = '2'; }
           else { displayWord = '•'; }
           break;
         case 8:
-          // 8/4 dibagi 4 ayunan (1, 3, 5, 7)
           if (beatInBar === 1) { vocalKey = 'intro'; displayWord = 'INTRO'; }
           else if (beatInBar === 3) { vocalKey = '2'; displayWord = '2'; }
           else if (beatInBar === 5) { vocalKey = '3'; displayWord = '3'; }
@@ -188,17 +184,21 @@ export class MetronomeEngine {
     } 
     else {
       // RULE: BAR KE-2 (FULL-TIME LOGIC)
-      // Menghitung setiap ketukan dari 1 sampai habis (sesuai time signature)
       vocalKey = beatInBar.toString(); 
       displayWord = vocalKey;
     }
 
-    // Eksekusi Suara Vokal (Hanya dimainkan jika vocalKey memiliki nilai)
+    // --- EKSEKUSI SUARA (DITUMPUK) ---
+    // 1. Selalu bunyikan Click (Sound Kit) di SETIAP ketukan CUE
+    const isFirstBeatOfBar = (beatInBar === 1);
+    this.playSoundKit(this.nextNoteTime, true, isFirstBeatOfBar);
+
+    // 2. Tumpuk dengan suara Vokal jika jadwal vokalnya ada di ketukan ini
     if (vocalKey !== '') {
       this.playVocalCount(this.nextNoteTime, vocalKey, barNumber === 1);
     }
     
-    // Update Visual di Layar (Titik hening '•' akan tetap di-render ke layar)
+    // Update Visual di Layar 
     if (this.onBeatVisual) {
       this.onBeatVisual(beatInBar, 0, true, displayWord);
     }
@@ -208,7 +208,7 @@ export class MetronomeEngine {
     this.nextNoteTime += secondsPerBeat;
     this.countInBeatIndex++;
 
-    // Jika seluruh hitungan (2 Bar) selesai, masuk ke lagu asli!
+    // Jika seluruh hitungan (2 Bar) selesai, masuk ke lagu asli
     if (this.countInBeatIndex >= totalCountBeats) {
       this.isCountingIn = false;
       this.currentBeat = 0;
