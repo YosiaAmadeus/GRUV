@@ -141,41 +141,70 @@ export class MetronomeEngine {
     }
   }
 
-  // --- LOGIKA HITUNGAN 2 BAR (COUNT-IN) ---
+// --- LOGIKA HITUNGAN 2 BAR (COUNT-IN) DENGAN MAPPING EKSPLISIT ---
   private scheduleCountInBeat() {
-    const totalCountBeats = this.beatsPerBar * 2; // 2 Bar
-    const barNumber = Math.floor(this.countInBeatIndex / this.beatsPerBar) + 1; // 1 atau 2
-    const beatInBar = (this.countInBeatIndex % this.beatsPerBar) + 1; // 1, 2, 3...
+    const totalCountBeats = this.beatsPerBar * 2; // Hitung total ketukan untuk 2 Bar
+    const barNumber = Math.floor(this.countInBeatIndex / this.beatsPerBar) + 1; // Mendeteksi kita sedang di Bar 1 atau 2
+    const beatInBar = (this.countInBeatIndex % this.beatsPerBar) + 1; // Ketukan ke-1, 2, 3, dst dalam satu Bar
     
-    // Tentukan kata apa yang diucapkan
-    let vocalKey = beatInBar.toString();
-    let displayWord = beatInBar.toString();
-    
+    let vocalKey = '';
+    let displayWord = '';
+
+    // RULE 1: Ketukan pertama di Bar ke-1 SELALU memanggil 'intro.wav'
     if (barNumber === 1 && beatInBar === 1) {
       vocalKey = 'intro';
       displayWord = 'INTRO';
+    } 
+    // RULE 2: Mapping Ketukan Sisanya Berdasarkan Time Signature
+    else {
+      switch (this.beatsPerBar) {
+        case 3:
+          // Hitungan 3/4 (Intro-2-3, 1-2-3)
+          vocalKey = beatInBar.toString(); // Memanggil '1', '2', '3'
+          break;
+        case 4:
+          // Hitungan 4/4 (Intro-2-3-4, 1-2-3-4)
+          vocalKey = beatInBar.toString();
+          break;
+        case 6:
+          // Hitungan 6/4 (Intro-2-3-4-5-6, 1-2-3-4-5-6)
+          vocalKey = beatInBar.toString();
+          break;
+        case 7:
+          // Hitungan 7/4 (Intro-2-3-4-5-6-7, 1-2-3-4-5-6-7)
+          vocalKey = beatInBar.toString();
+          break;
+        case 8:
+          // Hitungan 8/4 (Intro-2-3-4-5-6-7-8, 1-2-3-4-5-6-7-8)
+          vocalKey = beatInBar.toString();
+          break;
+        default:
+          vocalKey = beatInBar.toString();
+          break;
+      }
+      displayWord = vocalKey; // Teks yang muncul besar di UI (Angka 1-8)
     }
 
-    // Jalankan audio & UI
+    // Eksekusi Pemanggilan File Audio (.wav) dan Animasi UI
     this.playVocalCount(this.nextNoteTime, vocalKey, barNumber === 1);
     
     if (this.onBeatVisual) {
       this.onBeatVisual(beatInBar, 0, true, displayWord);
     }
 
-    // Majukan waktu 1 ketuk penuh (tanpa subdivisi)
+    // Majukan waktu persis 1 ketuk penuh (mengabaikan subdivisi saat hitungan masuk)
     const secondsPerBeat = 60.0 / this.bpm;
     this.nextNoteTime += secondsPerBeat;
     this.countInBeatIndex++;
 
-    // Cek apakah count-in selesai
+    // Cek apakah seluruh hitungan (2 Bar) sudah selesai, jika ya, masuk ke lagu asli!
     if (this.countInBeatIndex >= totalCountBeats) {
       this.isCountingIn = false;
       this.currentBeat = 0;
       this.currentSubdivisionNote = 0;
     }
   }
-
+  
 private playVocalCount(time: number, vocalKey: string, isFirstBar: boolean) {
     if (!this.audioContext || this.isMuted || !this.masterCompressor) return;
     
