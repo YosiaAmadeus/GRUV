@@ -389,7 +389,7 @@ export default function MetronomeUI() {
             </button>
           </div>
 
-          <div className="flex items-center w-full gap-3 mb-1">
+          <div className="flex items-center w-full gap-3 mb-2 mt-2">
             <button onClick={() => adjustBpm(-1)} className="p-3 sm:p-4 bg-neutral-800 rounded-2xl hover:bg-neutral-700 text-white touch-manipulation shrink-0"><Minus size={22} /></button>
             <input type="range" min="30" max="300" value={bpm} onChange={handleSliderChange} className="w-full h-3 bg-neutral-700 rounded-lg appearance-none cursor-pointer accent-emerald-500" />
             <button onClick={() => adjustBpm(1)} className="p-3 sm:p-4 bg-neutral-800 rounded-2xl hover:bg-neutral-700 text-white touch-manipulation shrink-0"><Plus size={22} /></button>
@@ -410,8 +410,8 @@ export default function MetronomeUI() {
           </div>
 
           {/* SUBDIVISION DIMATIKAN SAAT PLAYING */}
-          <div className="flex w-full bg-neutral-800/80 p-1 rounded-2xl shadow-sm border border-neutral-700/50">
-            {[ { label: '1/4', val: 1 }, { label: '1/8', val: 2 }, { label: 'Trip', val: 3 }, { label: '1/16', val: 4 } ].map(item => (
+          <div className="flex w-full bg-neutral-800/80 p-1 rounded-2xl shadow-sm border border-neutral-700/50 mt-2 ">
+            {[ { label: '1/4', val: 1 }, { label: '1/8', val: 2 }, { label: 'Triplet', val: 3 }, { label: '1/16', val: 4 } ].map(item => (
               <button 
                 key={item.val} 
                 onClick={() => setSubdivision(item.val)} 
