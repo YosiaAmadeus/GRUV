@@ -211,15 +211,15 @@ export default function MetronomeUI() {
     } catch (err) { console.error(err); } finally { setIsDeletingTrack(false); setIsDeleteTrackModalOpen(false); } 
   };
 
-  if (status === "loading") { return <div className="fixed inset-0 sm:relative flex flex-col w-full h-[100dvh] sm:h-auto sm:min-h-[700px] max-w-md mx-auto bg-neutral-900 sm:rounded-3xl shadow-2xl sm:border border-neutral-800 items-center justify-center"><Loader2 size={32} className="text-emerald-500 animate-spin" /></div>; }
+  if (status === "loading") { return <div className="fixed inset-0 sm:relative flex flex-col w-full h-dvh sm:h-auto sm:min-h-175 max-w-md mx-auto bg-neutral-900 sm:rounded-3xl shadow-2xl sm:border border-neutral-800 items-center justify-center"><Loader2 size={32} className="text-emerald-500 animate-spin" /></div>; }
 
   if (!isEngineReady) {
     return (
-      <div className="fixed inset-0 sm:relative flex flex-col w-full h-[100dvh] sm:h-auto sm:min-h-[700px] max-w-md mx-auto bg-neutral-900 sm:rounded-3xl shadow-2xl sm:border border-neutral-800 overflow-hidden items-center justify-center p-6">
+      <div className="fixed inset-0 sm:relative flex flex-col w-full h-dvh sm:h-auto sm:min-h-175 max-w-md mx-auto bg-neutral-900 sm:rounded-3xl shadow-2xl sm:border border-neutral-800 overflow-hidden items-center justify-center p-6">
         <div className="text-center space-y-6 flex flex-col items-center">
           <div className="w-12 h-1.5 bg-emerald-500 rounded-full mb-2"></div>
           <h1 className="text-4xl font-black text-white tracking-tight leading-tight">Gruv <br /><span className="text-emerald-500 text-3xl font-bold tracking-widest uppercase">Stage Engine</span></h1>
-          <p className="text-neutral-400 text-sm px-4 max-w-[280px] leading-relaxed mb-6">Menyiapkan modul audio bebas latensi untuk performa maksimal.</p>
+          <p className="text-neutral-400 text-sm px-4 max-w-70 leading-relaxed mb-6">Menyiapkan modul audio bebas latensi untuk performa maksimal.</p>
           <button onClick={handlePowerOn} className="group flex flex-col items-center justify-center gap-3 w-32 h-32 bg-neutral-800 border-2 border-emerald-500/50 rounded-full text-emerald-500 shadow-[0_0_30px_rgba(16,185,129,0.15)] hover:bg-emerald-500 hover:text-neutral-900 hover:shadow-[0_0_40px_rgba(16,185,129,0.4)] active:scale-95 transition-all">
             <Power size={40} className="group-hover:scale-110 transition-transform" /><span className="font-black tracking-widest text-[10px] uppercase">Power On</span>
           </button>
@@ -229,7 +229,7 @@ export default function MetronomeUI() {
   }
 
   return (
-    <div className="fixed inset-0 sm:relative sm:inset-auto flex flex-col w-full h-[100dvh] sm:h-auto sm:min-h-[700px] max-w-md mx-auto bg-neutral-900 sm:rounded-3xl shadow-2xl sm:border border-neutral-800 overflow-hidden pt-16 pb-4 px-3 sm:px-6">
+    <div className="fixed inset-0 sm:relative sm:inset-auto flex flex-col w-full h-dvh sm:h-auto sm:min-h-175 max-w-md mx-auto bg-neutral-900 sm:rounded-3xl shadow-2xl sm:border border-neutral-800 overflow-hidden pt-16 pb-4 px-3 sm:px-6">
       
       {session && (
         <div className="absolute top-4 left-4 z-10">
@@ -330,7 +330,7 @@ export default function MetronomeUI() {
                     <div 
                       key={beatNum} 
                       // Tambahkan 'leading-none' di sini agar teks tidak membuat lingkaran jadi lonjong
-                      className={`flex items-center justify-center flex-1 aspect-square rounded-full font-black leading-none transition-all duration-75 ${sizeClass} ${circleClass}`}
+                      className={`flex items-center justify-center flex-1 aspect-square rounded-full font-black leading-none transition-all duration-75 tabular-nums ${sizeClass} ${circleClass}`}
                     >
                       {beatNum}
                     </div>
@@ -339,9 +339,9 @@ export default function MetronomeUI() {
               </div>
 
               {/* PENAMPUNG TETAP AGAR TIDAK NAIK-TURUN */}
-              <div className="flex items-center justify-center h-[72px] sm:h-[96px] w-full overflow-hidden">
+              <div className="flex items-center justify-center h-18 sm:h-24 w-full overflow-hidden">
                 <div 
-                  className={`leading-[1] font-black tracking-tighter select-none transition-colors 
+                  className={`leading-none font-black select-none transition-colors tabular-nums antialiased backface-hidden
                     ${countInText === 'INTRO' ? 'text-[3.2rem] sm:text-[4.2rem]' : 'text-[4.5rem] sm:text-[6rem]'} 
                     ${countInText ? 'text-amber-500' : 'text-white'}
                   `}
@@ -372,7 +372,7 @@ export default function MetronomeUI() {
                   key={sound.id} 
                   onClick={() => setSoundType(sound.id as any)} 
                   disabled={isPlaying}
-                  className={`flex-1 min-w-[42px] py-2 text-[10px] font-bold tracking-widest rounded-lg transition-all touch-manipulation ${soundType === sound.id ? 'bg-emerald-500/20 text-emerald-500 shadow-sm border border-emerald-500/30 scale-105' : 'text-neutral-400 border border-transparent opacity-60 hover:opacity-100'}`}
+                  className={`flex-1 min-w-10.5 py-2 text-[10px] font-bold tracking-widest rounded-lg transition-all touch-manipulation ${soundType === sound.id ? 'bg-emerald-500/20 text-emerald-500 shadow-sm border border-emerald-500/30 scale-105' : 'text-neutral-400 border border-transparent opacity-60 hover:opacity-100'}`}
                 >
                   {sound.label}
                 </button>
@@ -425,7 +425,7 @@ export default function MetronomeUI() {
         </div>
         
         <div className="flex flex-col w-full gap-2 mt-4 sm:mt-8 shrink-0 mb-1">
-          <button onClick={togglePlay} className={`w-full h-32 sm:h-36 rounded-[2rem] flex items-center justify-center gap-4 text-4xl sm:text-4xl font-black transition-all duration-75 touch-manipulation shrink-0 ${isPlaying ? 'bg-red-500/10 text-red-500 border-2 border-red-500/50 shadow-[inset_0_0_20px_rgba(239,68,68,0.2)]' : 'bg-emerald-500 text-neutral-950 border-2 border-emerald-400 hover:bg-emerald-400 shadow-[0_10px_30px_rgba(16,185,129,0.3)] active:scale-[0.98]'}`}>
+          <button onClick={togglePlay} className={`w-full h-32 sm:h-36 rounded-4xl flex items-center justify-center gap-4 text-4xl sm:text-4xl font-black transition-all duration-75 touch-manipulation shrink-0 ${isPlaying ? 'bg-red-500/10 text-red-500 border-2 border-red-500/50 shadow-[inset_0_0_20px_rgba(239,68,68,0.2)]' : 'bg-emerald-500 text-neutral-950 border-2 border-emerald-400 hover:bg-emerald-400 shadow-[0_10px_30px_rgba(16,185,129,0.3)] active:scale-[0.98]'}`}>
             {isPlaying ? <><Square size={36} fill="currentColor" /> STOP</> : <><Play size={36} fill="currentColor" /> PLAY</>}
           </button>
           <div className="flex w-full gap-2 sm:gap-3">
