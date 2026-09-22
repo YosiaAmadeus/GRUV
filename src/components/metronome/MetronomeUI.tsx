@@ -338,8 +338,16 @@ export default function MetronomeUI() {
                 })}
               </div>
 
-              <div className={`text-[4.5rem] sm:text-[6rem] leading-[1] font-black tracking-tighter select-none transition-colors ${countInText ? 'text-amber-500' : 'text-white'}`}>
-                {countInText ? countInText : bpm}
+              {/* PENAMPUNG TETAP AGAR TIDAK NAIK-TURUN */}
+              <div className="flex items-center justify-center h-[72px] sm:h-[96px] w-full overflow-hidden">
+                <div 
+                  className={`leading-[1] font-black tracking-tighter select-none transition-colors 
+                    ${countInText === 'INTRO' ? 'text-[3.2rem] sm:text-[4.2rem]' : 'text-[4.5rem] sm:text-[6rem]'} 
+                    ${countInText ? 'text-amber-500' : 'text-white'}
+                  `}
+                >
+                  {countInText ? countInText : bpm}
+                </div>
               </div>
               
               <button onPointerDown={handleTapTempo} disabled={isPlaying} className="mt-1 w-32 sm:w-40 py-2 sm:py-3 shrink-0 bg-neutral-800/90 hover:bg-neutral-700 text-emerald-500 border-2 border-neutral-700 rounded-3xl flex items-center justify-center gap-2 active:scale-95 transition-all touch-manipulation shadow-md">

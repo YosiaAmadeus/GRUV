@@ -121,10 +121,7 @@ export class MetronomeEngine {
   public sync() {
     this.currentBeat = 0;
     this.currentSubdivisionNote = 0;
-    if (this.countInEnabled) {
-      this.isCountingIn = true;
-      this.countInBeatIndex = 0;
-    }
+      this.isCountingIn = false;
     if (this.audioContext) this.nextNoteTime = this.audioContext.currentTime;
   }
 
@@ -204,7 +201,7 @@ export class MetronomeEngine {
       this.currentSubdivisionNote = 0;
     }
   }
-  
+
 private playVocalCount(time: number, vocalKey: string, isFirstBar: boolean) {
     if (!this.audioContext || this.isMuted || !this.masterCompressor) return;
     
