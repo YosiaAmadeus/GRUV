@@ -138,77 +138,88 @@ export class MetronomeEngine {
     }
   }
 
-// --- LOGIKA HITUNGAN 2 BAR (VOKAL + CLICK SELALU BUNYI BERSAMAAN) ---
+// --- LOGIKA HITUNGAN 2 BAR (MENDUKUNG RHYTHM PATTERN / SUBDIVISION) ---
   private scheduleCountInBeat() {
     const totalCountBeats = this.beatsPerBar * 2; 
     const barNumber = Math.floor(this.countInBeatIndex / this.beatsPerBar) + 1; 
     const beatInBar = (this.countInBeatIndex % this.beatsPerBar) + 1; 
     
-    let vocalKey = '';
-    let displayWord = '';
+    // HANYA MAIN VOKAL & TAMPILKAN TEKS DI KETUKAN UTAMA (Subdivisi ke-0)
+    if (this.currentSubdivisionNote === 0) {
+      let vocalKey = '';
+      let displayWord = '';
 
-    if (barNumber === 1) {
-      // RULE: BAR KE-1 (HALF-TIME LOGIC)
-      switch (this.beatsPerBar) {
-        case 4:
-          if (beatInBar === 1) { vocalKey = 'intro'; displayWord = 'INTRO'; }
-          else if (beatInBar === 3) { vocalKey = '2'; displayWord = '2'; }
-          else { displayWord = '•'; } 
-          break;
-        case 3:
-          if (beatInBar === 1) { vocalKey = 'intro'; displayWord = 'INTRO'; }
-          else { displayWord = '•'; }
-          break;
-        case 6:
-          if (beatInBar === 1) { vocalKey = 'intro'; displayWord = 'INTRO'; }
-          else if (beatInBar === 4) { vocalKey = '2'; displayWord = '2'; }
-          else { displayWord = '•'; }
-          break;
-        case 7:
-          if (beatInBar === 1) { vocalKey = 'intro'; displayWord = 'INTRO'; }
-          else if (beatInBar === 5) { vocalKey = '2'; displayWord = '2'; }
-          else { displayWord = '•'; }
-          break;
-        case 8:
-          if (beatInBar === 1) { vocalKey = 'intro'; displayWord = 'INTRO'; }
-          else if (beatInBar === 3) { vocalKey = '2'; displayWord = '2'; }
-          else if (beatInBar === 5) { vocalKey = '3'; displayWord = '3'; }
-          else if (beatInBar === 7) { vocalKey = '4'; displayWord = '4'; }
-          else { displayWord = '•'; }
-          break;
-        default:
-          if (beatInBar === 1) { vocalKey = 'intro'; displayWord = 'INTRO'; }
-          else { displayWord = '•'; }
-          break;
+      if (barNumber === 1) {
+        // RULE: BAR KE-1 (HALF-TIME LOGIC)
+        switch (this.beatsPerBar) {
+          case 4:
+            if (beatInBar === 1) { vocalKey = 'intro'; displayWord = 'INTRO'; }
+            else if (beatInBar === 3) { vocalKey = '2'; displayWord = '2'; }
+            else { displayWord = '•'; } 
+            break;
+          case 3:
+            if (beatInBar === 1) { vocalKey = 'intro'; displayWord = 'INTRO'; }
+            else { displayWord = '•'; }
+            break;
+          case 6:
+            if (beatInBar === 1) { vocalKey = 'intro'; displayWord = 'INTRO'; }
+            else if (beatInBar === 4) { vocalKey = '2'; displayWord = '2'; }
+            else { displayWord = '•'; }
+            break;
+          case 7:
+            if (beatInBar === 1) { vocalKey = 'intro'; displayWord = 'INTRO'; }
+            else if (beatInBar === 5) { vocalKey = '2'; displayWord = '2'; }
+            else { displayWord = '•'; }
+            break;
+          case 8:
+            if (beatInBar === 1) { vocalKey = 'intro'; displayWord = 'INTRO'; }
+            else if (beatInBar === 3) { vocalKey = '2'; displayWord = '2'; }
+            else if (beatInBar === 5) { vocalKey = '3'; displayWord = '3'; }
+            else if (beatInBar === 7) { vocalKey = '4'; displayWord = '4'; }
+            else { displayWord = '•'; }
+            break;
+          default:
+            if (beatInBar === 1) { vocalKey = 'intro'; displayWord = 'INTRO'; }
+            else { displayWord = '•'; }
+            break;
+        }
+      } 
+      else {
+        // RULE: BAR KE-2 (FULL-TIME LOGIC)
+        vocalKey = beatInBar.toString(); 
+        displayWord = vocalKey;
+      }
+
+      // Bunyikan Click Utama (Keras) & Suara Vokal (Jika Ada)
+      const isFirstBeatOfBar = (beatInBar === 1);
+      this.playSoundKit(this.nextNoteTime, true, isFirstBeatOfBar);
+
+      if (vocalKey !== '') {
+        this.playVocalCount(this.nextNoteTime, vocalKey, barNumber === 1);
+      }
+      
+      if (this.onBeatVisual) {
+        this.onBeatVisual(beatInBar, 0, true, displayWord);
       }
     } 
     else {
-      // RULE: BAR KE-2 (FULL-TIME LOGIC)
-      vocalKey = beatInBar.toString(); 
-      displayWord = vocalKey;
+      // JIKA INI ADALAH ANAK KETUKAN (1/8, TRIPLET, ATAU 1/16)
+      // Bunyikan suara pelan (ghost notes) tanpa suara vokal
+      this.playSoundKit(this.nextNoteTime, false, false);
     }
 
-    // --- EKSEKUSI SUARA (DITUMPUK) ---
-    // 1. Selalu bunyikan Click (Sound Kit) di SETIAP ketukan CUE
-    const isFirstBeatOfBar = (beatInBar === 1);
-    this.playSoundKit(this.nextNoteTime, true, isFirstBeatOfBar);
-
-    // 2. Tumpuk dengan suara Vokal jika jadwal vokalnya ada di ketukan ini
-    if (vocalKey !== '') {
-      this.playVocalCount(this.nextNoteTime, vocalKey, barNumber === 1);
-    }
-    
-    // Update Visual di Layar 
-    if (this.onBeatVisual) {
-      this.onBeatVisual(beatInBar, 0, true, displayWord);
-    }
-
-    // Majukan waktu persis 1 ketuk penuh
+    // PERBAIKAN: Majukan waktu berdasarkan pecahan subdivision (Bukan ketukan penuh lagi)
     const secondsPerBeat = 60.0 / this.bpm;
-    this.nextNoteTime += secondsPerBeat;
-    this.countInBeatIndex++;
+    this.nextNoteTime += (secondsPerBeat / this.subdivision);
+    this.currentSubdivisionNote++;
 
-    // Jika seluruh hitungan (2 Bar) selesai, masuk ke lagu asli
+    // Jika pecahan sudah mencapai batas (misal 1/8 punya 2 pecahan), baru maju ke ketukan utama berikutnya
+    if (this.currentSubdivisionNote >= this.subdivision) {
+      this.currentSubdivisionNote = 0;
+      this.countInBeatIndex++;
+    }
+
+    // Jika seluruh hitungan (2 Bar) selesai, masuk ke lagu asli!
     if (this.countInBeatIndex >= totalCountBeats) {
       this.isCountingIn = false;
       this.currentBeat = 0;
@@ -281,10 +292,14 @@ private playVocalCount(time: number, vocalKey: string, isFirstBar: boolean) {
     }
   }
 
-  // --- SINTESIS 5 INSTRUMEN TANPA LATENSI (VOLUME RATA, AKSEN NADA) ---
-// --- SINTESIS 5 INSTRUMEN TANPA LATENSI (VOLUME RATA, TIMBRE BERBEDA) ---
+// --- SINTESIS 5 INSTRUMEN TANPA LATENSI (3-TIER DYNAMICS: AKSEN 1, AKSEN 2, & GHOST NOTES) ---
   private playSoundKit(time: number, isMain: boolean, isFirst: boolean) {
     if (!this.audioContext || !this.masterCompressor) return;
+
+    // --- HIERARKI 3-TIER DYNAMICS ---
+    const isTier1 = isFirst;                  // Ketukan 1 (Paling Keras & Menonjol)
+    const isTier2 = isMain && !isFirst;       // Ketukan 2, 3, 4 (Menengah)
+    const isTier3 = !isMain;                  // Anak Ketukan/Subdivisi (Sangat Pelan/Ghost Notes)
 
     const ctx = this.audioContext;
     const osc = ctx.createOscillator();
@@ -292,26 +307,31 @@ private playVocalCount(time: number, vocalKey: string, isFirstBar: boolean) {
     
     switch (this.soundType) {
       case 'woodblock':
-        // Desain Baru: Tegas, Jelas, dan "Kopong" (Hollow) ala Clave/Woodblock Asli
         osc.type = 'square';
-        
-        // Filter Bandpass untuk membuang karakter "elektronik/robot" 
-        // dan menonjolkan frekuensi resonansi kayu
         const woodFilter = ctx.createBiquadFilter();
         woodFilter.type = 'bandpass';
-        woodFilter.Q.value = 2.5; // Membuat suaranya terpusat dan membulat
-        woodFilter.frequency.setValueAtTime(isFirst ? 1500 : 1000, time); // Pitch yang tegas
+        woodFilter.Q.value = 2.5; 
         
-        osc.frequency.setValueAtTime(isFirst ? 1500 : 1000, time);
+        if (isTier1) {
+          woodFilter.frequency.setValueAtTime(1500, time);
+          osc.frequency.setValueAtTime(1500, time);
+          gain.gain.setValueAtTime(6.0, time);
+          gain.gain.exponentialRampToValueAtTime(0.001, time + 0.04);
+        } else if (isTier2) {
+          woodFilter.frequency.setValueAtTime(1000, time);
+          osc.frequency.setValueAtTime(1000, time);
+          gain.gain.setValueAtTime(3.5, time);
+          gain.gain.exponentialRampToValueAtTime(0.001, time + 0.03);
+        } else { // Tier 3
+          woodFilter.frequency.setValueAtTime(700, time);
+          osc.frequency.setValueAtTime(700, time);
+          gain.gain.setValueAtTime(1.2, time); // Volume ghost note
+          gain.gain.exponentialRampToValueAtTime(0.001, time + 0.015); // Sangat pendek (Tck)
+        }
         
-        // Volume maksimal yang tajam
-        gain.gain.setValueAtTime(isMain ? 6.0 : 2.5, time);
-        gain.gain.exponentialRampToValueAtTime(0.001, time + 0.04); // Durasi sangat pendek agar perkusif
-        
-        // Sambungkan melalui filter sebelum masuk ke gain dan compressor
         osc.connect(woodFilter).connect(gain).connect(this.masterCompressor);
         osc.start(time);
-        osc.stop(time + 0.04);
+        osc.stop(time + 0.05);
         break;
 
       case 'hihat':
@@ -320,10 +340,20 @@ private playVocalCount(time: number, vocalKey: string, isFirstBar: boolean) {
           noise.buffer = this.noiseBuffer;
           const filter = ctx.createBiquadFilter();
           filter.type = 'highpass';
-          filter.frequency.value = isFirst ? 5000 : 7000; 
           
-          gain.gain.setValueAtTime(isMain ? 5.0 : 2.0, time);
-          gain.gain.exponentialRampToValueAtTime(0.001, time + (isFirst ? 0.25 : 0.05));
+          if (isTier1) {
+            filter.frequency.setValueAtTime(5000, time);
+            gain.gain.setValueAtTime(5.0, time);
+            gain.gain.exponentialRampToValueAtTime(0.001, time + 0.25);
+          } else if (isTier2) {
+            filter.frequency.setValueAtTime(7000, time);
+            gain.gain.setValueAtTime(2.5, time);
+            gain.gain.exponentialRampToValueAtTime(0.001, time + 0.1);
+          } else {
+            filter.frequency.setValueAtTime(9000, time); // Lebih tipis/kering
+            gain.gain.setValueAtTime(0.8, time); // Volume ditekan
+            gain.gain.exponentialRampToValueAtTime(0.001, time + 0.04); // Durasi sangat rapat
+          }
           
           noise.connect(filter).connect(gain).connect(this.masterCompressor);
           noise.start(time);
@@ -337,11 +367,23 @@ private playVocalCount(time: number, vocalKey: string, isFirstBar: boolean) {
           noise.buffer = this.noiseBuffer;
           const filter = ctx.createBiquadFilter();
           filter.type = 'bandpass';
-          filter.frequency.value = isFirst ? 3000 : 4000;
           
-          gain.gain.setValueAtTime(0.01, time);
-          gain.gain.linearRampToValueAtTime(isMain ? 5.0 : 2.0, time + 0.02);
-          gain.gain.exponentialRampToValueAtTime(0.001, time + (isFirst ? 0.2 : 0.08));
+          if (isTier1) {
+            filter.frequency.setValueAtTime(3000, time);
+            gain.gain.setValueAtTime(0.01, time);
+            gain.gain.linearRampToValueAtTime(5.0, time + 0.02); // Attack sedikit lambat
+            gain.gain.exponentialRampToValueAtTime(0.001, time + 0.2);
+          } else if (isTier2) {
+            filter.frequency.setValueAtTime(4000, time);
+            gain.gain.setValueAtTime(0.01, time);
+            gain.gain.linearRampToValueAtTime(2.5, time + 0.015);
+            gain.gain.exponentialRampToValueAtTime(0.001, time + 0.1);
+          } else {
+            filter.frequency.setValueAtTime(5000, time);
+            gain.gain.setValueAtTime(0.01, time);
+            gain.gain.linearRampToValueAtTime(1.0, time + 0.01); // Cepat (Ch-ch)
+            gain.gain.exponentialRampToValueAtTime(0.001, time + 0.05);
+          }
           
           noise.connect(filter).connect(gain).connect(this.masterCompressor);
           noise.start(time);
@@ -350,29 +392,47 @@ private playVocalCount(time: number, vocalKey: string, isFirstBar: boolean) {
         break;
 
       case 'techno':
-        osc.type = isFirst ? 'square' : 'triangle';
-        osc.frequency.setValueAtTime(isFirst ? 800 : (isMain ? 300 : 200), time);
-        
-        gain.gain.setValueAtTime(isMain ? 5.0 : 2.0, time);
-        gain.gain.exponentialRampToValueAtTime(0.001, time + 0.1);
+        if (isTier1) {
+          osc.type = 'square';
+          osc.frequency.setValueAtTime(800, time);
+          gain.gain.setValueAtTime(5.0, time);
+          gain.gain.exponentialRampToValueAtTime(0.001, time + 0.1);
+        } else if (isTier2) {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(300, time);
+          gain.gain.setValueAtTime(2.5, time);
+          gain.gain.exponentialRampToValueAtTime(0.001, time + 0.08);
+        } else {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(150, time); // Sub/Low-mid untuk ghost note
+          gain.gain.setValueAtTime(1.0, time);
+          gain.gain.exponentialRampToValueAtTime(0.001, time + 0.04);
+        }
         
         osc.connect(gain).connect(this.masterCompressor);
         osc.start(time);
-        osc.stop(time + 0.1);
+        osc.stop(time + 0.15);
         break;
 
       default: // 'digital'
         osc.type = 'sine';
-        // PERBAIKAN: Frekuensi dinaikkan drastis ala Metronom Digital (2000/1000Hz)
-        osc.frequency.setValueAtTime(isFirst ? 2000 : 1000, time);
-        
-        gain.gain.setValueAtTime(isMain ? 5.0 : 2.0, time);
-        // Durasi lebih panjang (0.08) dari woodblock (0.02)
-        gain.gain.exponentialRampToValueAtTime(0.001, time + 0.08);
+        if (isTier1) {
+          osc.frequency.setValueAtTime(2000, time);
+          gain.gain.setValueAtTime(5.0, time);
+          gain.gain.exponentialRampToValueAtTime(0.001, time + 0.08);
+        } else if (isTier2) {
+          osc.frequency.setValueAtTime(1000, time);
+          gain.gain.setValueAtTime(2.5, time);
+          gain.gain.exponentialRampToValueAtTime(0.001, time + 0.06);
+        } else {
+          osc.frequency.setValueAtTime(600, time); // Pitch lebih rendah
+          gain.gain.setValueAtTime(1.0, time); // Volume pelan
+          gain.gain.exponentialRampToValueAtTime(0.001, time + 0.03); // Durasi pendek (Beep)
+        }
         
         osc.connect(gain).connect(this.masterCompressor);
         osc.start(time);
-        osc.stop(time + 0.08);
+        osc.stop(time + 0.1);
         break;
     }
   }
