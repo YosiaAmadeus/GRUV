@@ -75,7 +75,7 @@ export default function SetlistPanel({ isOpen, onClose, onSelectSetlist }: Setli
       <div className="w-full flex flex-col p-6 h-full relative">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-white font-bold text-lg flex items-center gap-2">
-            <Music size={18} className="text-emerald-500" /> Pilih Setlist
+            <Music size={18} className="text-emerald-500" /> Select Setlist
           </h3>
           <button onPointerDown={onClose} className="p-2 text-neutral-400 hover:text-white bg-neutral-800 hover:bg-neutral-700 rounded-full transition-colors">
             <X size={16} />
@@ -85,7 +85,7 @@ export default function SetlistPanel({ isOpen, onClose, onSelectSetlist }: Setli
         <form onSubmit={handleCreate} className="flex gap-2 mb-6">
           <input 
             type="text"
-            placeholder={setlists.length >= 5 ? "Batas 5 Setlist Tercapai" : "Nama Setlist Baru..."}
+            placeholder={setlists.length >= 5 ? "Maximum of 5 setlists reached." : "Enter a new setlist name"}
             value={newSetName}
             onChange={(e) => setNewSetName(e.target.value)}
             disabled={setlists.length >= 5}
@@ -133,7 +133,7 @@ export default function SetlistPanel({ isOpen, onClose, onSelectSetlist }: Setli
             <Trash2 className="text-red-500 mx-auto mb-2" size={24} />
             <h3 className="text-white font-bold">Hapus Setlist?</h3>
             <div className="flex gap-3 pt-2">
-              <button onPointerDown={() => setSetlistToDelete(null)} className="flex-1 py-2.5 rounded-xl bg-neutral-800 text-white hover:bg-neutral-700">Batal</button>
+              <button onPointerDown={() => setSetlistToDelete(null)} className="flex-1 py-2.5 rounded-xl bg-neutral-800 text-white hover:bg-neutral-700">Cancel</button>
               <button onPointerDown={confirmDelete} className="flex-1 py-2.5 rounded-xl bg-red-500 text-white hover:bg-red-600">Hapus</button>
             </div>
           </div>

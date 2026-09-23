@@ -260,7 +260,7 @@ export default function MetronomeUI() {
                 <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-wider truncate">{activeSetlist.name}</span>
                 <div className="flex items-center gap-2">
                   <span className={`font-medium text-sm truncate ${isDraftMode ? 'text-neutral-400 italic' : 'text-white'}`}>
-                    {isDraftMode ? "[ Ketuk simpan ]" : currentTrack?.title}
+                    {isDraftMode ? "[ Tap Save ]" : currentTrack?.title}
                   </span>
                   {!isDraftMode && currentTrack && (
                     <button 
@@ -276,7 +276,7 @@ export default function MetronomeUI() {
             </div>
             <div className="flex gap-2">
               {isDraftMode ? (
-                <button onClick={() => setIsSaveModalOpen(true)} className="flex-1 py-1.5 bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 rounded-lg text-xs font-bold flex items-center justify-center gap-1 touch-manipulation"><Save size={14} /> Simpan Lagu</button>
+                <button onClick={() => setIsSaveModalOpen(true)} className="flex-1 py-1.5 bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 rounded-lg text-xs font-bold flex items-center justify-center gap-1 touch-manipulation"><Save size={14} /> Save song</button>
               ) : (
                 <>
                   <div className="flex-1 flex gap-2">
@@ -286,7 +286,7 @@ export default function MetronomeUI() {
                       </button>
                     ) : (
                       activeSetlist.tracks?.length < 15 && (
-                        <button onClick={() => { setCurrentTrackIndex(activeSetlist.tracks.length); setBpm(120); setTimeSignature(4); setSubdivision(1); setCountInEnabled(false); }} className="flex-1 py-1.5 bg-neutral-800 border border-neutral-700 rounded-lg text-neutral-300 text-xs font-medium flex items-center justify-center gap-1 touch-manipulation"><PlusCircle size={14} /> Tambah Lagu</button>
+                        <button onClick={() => { setCurrentTrackIndex(activeSetlist.tracks.length); setBpm(120); setTimeSignature(4); setSubdivision(1); setCountInEnabled(false); }} className="flex-1 py-1.5 bg-neutral-800 border border-neutral-700 rounded-lg text-neutral-300 text-xs font-medium flex items-center justify-center gap-1 touch-manipulation"><PlusCircle size={14} /> Add Song</button>
                       )
                     )}
                   </div>
@@ -444,13 +444,13 @@ export default function MetronomeUI() {
       {isSaveModalOpen && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-6 rounded-3xl animate-in fade-in">
           <form onSubmit={handleSaveNewTrack} className="bg-neutral-900 border border-neutral-800 p-6 rounded-2xl w-full text-center space-y-4 shadow-2xl">
-            <h3 className="text-white font-bold">Simpan Lagu</h3>
+            <h3 className="text-white font-bold">Save song</h3>
             <p className="text-neutral-400 text-sm">Tempo: <span className="text-emerald-500 font-bold">{bpm} BPM</span> | <span className="text-amber-500 font-bold">{timeSignature}/4</span></p>
-            <input type="text" autoFocus placeholder="Judul Lagu..." value={newTrackTitle} onChange={(e) => setNewTrackTitle(e.target.value)} className="w-full bg-neutral-800 text-white px-4 py-3 rounded-xl border border-neutral-700 focus:outline-none focus:border-emerald-500 text-center" />
+            <input type="text" autoFocus placeholder="Song title..." value={newTrackTitle} onChange={(e) => setNewTrackTitle(e.target.value)} className="w-full bg-neutral-800 text-white px-4 py-3 rounded-xl border border-neutral-700 focus:outline-none focus:border-emerald-500 text-center" />
             <div className="flex gap-3 pt-2">
-              <button type="button" onClick={() => setIsSaveModalOpen(false)} className="flex-1 py-3 rounded-xl bg-neutral-800 text-white hover:bg-neutral-700">Batal</button>
+              <button type="button" onClick={() => setIsSaveModalOpen(false)} className="flex-1 py-3 rounded-xl bg-neutral-800 text-white hover:bg-neutral-700">Cancel</button>
               <button type="submit" disabled={!newTrackTitle.trim() || isProcessing} className="flex-1 py-3 rounded-xl bg-emerald-500 text-neutral-950 font-bold hover:bg-emerald-400 flex justify-center">
-                {isProcessing ? <Loader2 size={20} className="animate-spin" /> : "Simpan"}
+                {isProcessing ? <Loader2 size={20} className="animate-spin" /> : "Save"}
               </button>
             </div>
           </form>
@@ -461,12 +461,12 @@ export default function MetronomeUI() {
       {isEditTitleModalOpen && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-6 rounded-3xl animate-in fade-in">
           <form onSubmit={handleSaveEditedTitle} className="bg-neutral-900 border border-neutral-800 p-6 rounded-2xl w-full text-center space-y-4 shadow-2xl">
-            <h3 className="text-white font-bold">Ganti Nama Lagu</h3>
-            <input type="text" autoFocus placeholder="Judul Lagu..." value={editTitleValue} onChange={(e) => setEditTitleValue(e.target.value)} className="w-full bg-neutral-800 text-white px-4 py-3 rounded-xl border border-neutral-700 focus:outline-none focus:border-emerald-500 text-center" />
+            <h3 className="text-white font-bold">Rename Song</h3>
+            <input type="text" autoFocus placeholder="Song title..." value={editTitleValue} onChange={(e) => setEditTitleValue(e.target.value)} className="w-full bg-neutral-800 text-white px-4 py-3 rounded-xl border border-neutral-700 focus:outline-none focus:border-emerald-500 text-center" />
             <div className="flex gap-3 pt-2">
-              <button type="button" onClick={() => setIsEditTitleModalOpen(false)} className="flex-1 py-3 rounded-xl bg-neutral-800 text-white hover:bg-neutral-700">Batal</button>
+              <button type="button" onClick={() => setIsEditTitleModalOpen(false)} className="flex-1 py-3 rounded-xl bg-neutral-800 text-white hover:bg-neutral-700">Cancel</button>
               <button type="submit" disabled={!editTitleValue.trim() || isProcessing} className="flex-1 py-3 rounded-xl bg-emerald-500 text-neutral-950 font-bold hover:bg-emerald-400 flex justify-center">
-                {isProcessing ? <Loader2 size={20} className="animate-spin" /> : "Simpan"}
+                {isProcessing ? <Loader2 size={20} className="animate-spin" /> : "Save"}
               </button>
             </div>
           </form>
@@ -479,10 +479,10 @@ export default function MetronomeUI() {
             <div className="mx-auto w-12 h-12 bg-red-500/10 rounded-full flex items-center justify-center mb-2">
               <Trash2 className="text-red-500" size={24} />
             </div>
-            <h3 className="text-white font-bold">Hapus Lagu?</h3>
-            <p className="text-neutral-400 text-sm leading-relaxed">Lagu "<span className="text-white font-medium">{currentTrack.title}</span>" akan dihapus permanen.</p>
+            <h3 className="text-white font-bold">Delete Song?</h3>
+            <p className="text-neutral-400 text-sm leading-relaxed">Song "<span className="text-white font-medium">{currentTrack.title}</span>" will be permanently deleted.</p>
             <div className="flex gap-3 pt-2">
-              <button onClick={() => setIsDeleteTrackModalOpen(false)} className="flex-1 py-3 rounded-xl bg-neutral-800 text-white hover:bg-neutral-700 transition-colors">Batal</button>
+              <button onClick={() => setIsDeleteTrackModalOpen(false)} className="flex-1 py-3 rounded-xl bg-neutral-800 text-white hover:bg-neutral-700 transition-colors">Cancel</button>
               <button onClick={confirmDeleteTrack} disabled={isDeletingTrack} className="flex-1 py-3 rounded-xl bg-red-500 text-white font-bold hover:bg-red-600 flex justify-center items-center transition-colors">
                 {isDeletingTrack ? <Loader2 size={20} className="animate-spin" /> : "Hapus"}
               </button>
