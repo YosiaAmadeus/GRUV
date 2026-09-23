@@ -46,6 +46,7 @@ export default function MetronomeUI() {
 
   const isDraftMode = activeSetlist && currentTrackIndex === activeSetlist.tracks?.length;
   const currentTrack = !isDraftMode && activeSetlist?.tracks ? activeSetlist.tracks[currentTrackIndex] : null;
+  const canNavigate = activeSetlist?.tracks?.length > 1 || (activeSetlist?.tracks?.length === 1 && isDraftMode);
   
   const hasSettingsChanged = currentTrack && (
     currentTrack.bpm !== bpm || 
@@ -276,7 +277,7 @@ export default function MetronomeUI() {
             </div>
             <div className="flex gap-2">
               {isDraftMode ? (
-                <button onClick={() => setIsSaveModalOpen(true)} className="flex-1 py-1.5 bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 rounded-lg text-xs font-bold flex items-center justify-center gap-1 touch-manipulation"><Save size={14} /> Save song</button>
+                <button onClick={() => setIsSaveModalOpen(true)} className="flex-1 py-1.5 bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 rounded-lg text-xs font-bold flex items-center justify-center gap-1 touch-manipulation"><Save size={14} /> Save Song</button>
               ) : (
                 <>
                   <div className="flex-1 flex gap-2">
@@ -301,7 +302,13 @@ export default function MetronomeUI() {
         <div className="flex flex-col w-full flex-1 justify-center min-h-0 py-1 mt-2">
           
           <div className="flex items-center justify-between w-full mb-4">
-            <button onClick={goPrev} disabled={!activeSetlist || isDraftMode || activeSetlist.tracks?.length <= 1} className={`w-14 h-28 sm:w-20 sm:h-36 shrink-0 flex items-center justify-center rounded-2xl transition-all touch-manipulation ${activeSetlist && !isDraftMode && activeSetlist.tracks?.length > 1 ? 'bg-neutral-800 hover:bg-neutral-700 text-white active:scale-95 shadow-md border border-neutral-700' : 'bg-transparent text-neutral-800 opacity-50'}`}><ChevronLeft size={48} /></button>
+            <button 
+              onClick={goPrev} 
+              disabled={!canNavigate} 
+              className={`w-14 h-28 sm:w-20 sm:h-36 shrink-0 flex items-center justify-center rounded-2xl transition-all touch-manipulation ${canNavigate ? 'bg-neutral-800 hover:bg-neutral-700 text-white active:scale-95 shadow-md border border-neutral-700' : 'bg-transparent text-neutral-800 opacity-50'}`}
+            >
+              <ChevronLeft size={48} />
+            </button>
             
             <div className="text-center flex-1 flex flex-col items-center justify-center mx-2 w-full">
               
@@ -355,7 +362,13 @@ export default function MetronomeUI() {
               </button>
             </div>
             
-            <button onClick={goNext} disabled={!activeSetlist || isDraftMode || activeSetlist.tracks?.length <= 1} className={`w-14 h-28 sm:w-20 sm:h-36 shrink-0 flex items-center justify-center rounded-2xl transition-all touch-manipulation ${activeSetlist && !isDraftMode && activeSetlist.tracks?.length > 1 ? 'bg-neutral-800 hover:bg-neutral-700 text-white active:scale-95 shadow-md border border-neutral-700' : 'bg-transparent text-neutral-800 opacity-50'}`}><ChevronRight size={48} /></button>
+            <button 
+              onClick={goNext} 
+              disabled={!canNavigate} 
+              className={`w-14 h-28 sm:w-20 sm:h-36 shrink-0 flex items-center justify-center rounded-2xl transition-all touch-manipulation ${canNavigate ? 'bg-neutral-800 hover:bg-neutral-700 text-white active:scale-95 shadow-md border border-neutral-700' : 'bg-transparent text-neutral-800 opacity-50'}`}
+            >
+              <ChevronRight size={48} />
+            </button>
           </div>
 
           <div className="flex gap-2 w-full mb-1">
@@ -444,7 +457,7 @@ export default function MetronomeUI() {
       {isSaveModalOpen && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-6 rounded-3xl animate-in fade-in">
           <form onSubmit={handleSaveNewTrack} className="bg-neutral-900 border border-neutral-800 p-6 rounded-2xl w-full text-center space-y-4 shadow-2xl">
-            <h3 className="text-white font-bold">Save song</h3>
+            <h3 className="text-white font-bold">Save Song</h3>
             <p className="text-neutral-400 text-sm">Tempo: <span className="text-emerald-500 font-bold">{bpm} BPM</span> | <span className="text-amber-500 font-bold">{timeSignature}/4</span></p>
             <input type="text" autoFocus placeholder="Song title..." value={newTrackTitle} onChange={(e) => setNewTrackTitle(e.target.value)} className="w-full bg-neutral-800 text-white px-4 py-3 rounded-xl border border-neutral-700 focus:outline-none focus:border-emerald-500 text-center" />
             <div className="flex gap-3 pt-2">
