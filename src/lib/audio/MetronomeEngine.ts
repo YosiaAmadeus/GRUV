@@ -294,7 +294,7 @@ private playVocalCount(time: number, vocalKey: string, isFirstBar: boolean) {
 
 // --- SINTESIS 5 INSTRUMEN TANPA LATENSI (3-TIER DYNAMICS: AKSEN 1, AKSEN 2, & GHOST NOTES) ---
   private playSoundKit(time: number, isMain: boolean, isFirst: boolean) {
-    if (!this.audioContext || !this.masterCompressor) return;
+    if (!this.audioContext || this.isMuted || !this.masterCompressor) return;
 
     // --- HIERARKI 3-TIER DYNAMICS ---
     const isTier1 = isFirst;                  // Ketukan 1 (Paling Keras & Menonjol)
