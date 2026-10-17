@@ -23,7 +23,7 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: "GRUV",
   description: "Stage-ready sequencer for drummers",
-  manifest: "/manifest.json", // Pastikan namanya sesuai dengan file manifest yang kamu buat (.json atau .webmanifest)
+  manifest: "/manifest.webmanifest",
   icons: {
     icon: [
       { url: '/logo/favicon-16.png', sizes: '16x16', type: 'image/png' },
