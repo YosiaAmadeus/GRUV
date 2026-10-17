@@ -5,6 +5,7 @@ import { prisma } from "./prisma";
 
 const ALLOWED_EMAILS = [
   "yosiaamadeus@gmail.com", // PASTIKAN EMAILMU ADA DI SINI
+  "welvinyss@gmail.com",
 ];
 
 export const authOptions: NextAuthOptions = {

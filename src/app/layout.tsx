@@ -23,7 +23,18 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: "GRUV",
   description: "Stage-ready sequencer for drummers",
-  manifest: "/manifest.webmanifest",
+  manifest: "/manifest.json", // Pastikan namanya sesuai dengan file manifest yang kamu buat (.json atau .webmanifest)
+  icons: {
+    icon: [
+      { url: '/logo/favicon-16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/logo/favicon-32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/logo/icon-192.png', sizes: '192x192', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/logo/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+  },
+  themeColor: '#000000',
 };
 
 export default function RootLayout({
